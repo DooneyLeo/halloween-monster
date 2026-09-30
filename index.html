@@ -130,18 +130,18 @@
             display: flex;
         }
 
-        /* 大圖呈現區 */
+        /* 大圖呈現區（加大版卡片） */
         .monster-image-container {
             width: 100%;
-            max-width: 400px;
+            max-width: 440px;
             aspect-ratio: 4/3;
-            border-radius: 12px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
-            border: 2px solid var(--primary-color);
-            box-shadow: 0 0 15px rgba(255, 115, 0, 0.2);
+            margin-bottom: 15px;
+            border: 3px solid var(--primary-color);
+            box-shadow: 0 0 20px rgba(255, 115, 0, 0.3);
             overflow: hidden;
             background: #111;
         }
@@ -151,8 +151,23 @@
             object-fit: cover;
         }
         .monster-large-emoji {
-            font-size: 120px;
+            font-size: 110px;
             line-height: 1;
+        }
+
+        .monster-name {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #fff;
+            margin: 5px 0 8px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .monster-phrase {
+            font-size: 1.1rem;
+            color: #ddd;
+            font-style: italic;
+            margin-bottom: 15px;
+            line-height: 1.4;
         }
 
         /* 按鈕風格 */
@@ -198,6 +213,7 @@
             gap: 12px;
             width: 100%;
             align-items: center;
+            margin-top: 5px;
         }
 
         @keyframes fadeIn {
@@ -267,6 +283,9 @@
             <div class="monster-image-container" id="monster-image-box">
                 <!-- 動態填入大圖片或 Emoji -->
             </div>
+            
+            <div class="monster-name" id="result-name">怪獸名稱</div>
+            <div class="monster-phrase" id="result-phrase">怪獸一句話台詞</div>
 
             <div class="button-group">
                 <button id="download-btn" class="btn">📸 下載怪獸結果卡片</button>
@@ -280,15 +299,356 @@
 
     <div id="debug-panel"></div>
 
-    <!-- 使用全域相容的 JS Bundle 替代原本的 Module Import，確保 file:// 能直接雙擊執行 -->
+    <!-- 使用全域相容的 JS Bundle 載入，相容性最高 -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.js" crossorigin="anonymous"></script>
 
     <script>
-        // 從全域 tasksVision 物件取出類別
         const { FaceLandmarker, FilesetResolver } = tasksVision;
 
         // ==========================================
         // 【測試用 Base64 圖片】
         // 未來可將此處替換為您自己的真實怪獸 Base64 字串
         // ==========================================
-        const TEST_BASE64_IMAGE = 'data:image/jpeg;base64,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tjF2i3p4j9x2t+A8fG+p2eJmne/wCmnS474X2v4iX25N4u4f3U3uHByB37Hftv893a74u25eEotz/34a7479sUf/E38O++a9qLrtfEpr/bLqM/v9tI4y/j/pE5e7300Wd/uNf4/c/l8GbeBf02aU+U50mAtv/wA2143qgtxXng/m5f23+a72+Ld2/a3e14q9/i/m22a00/xXbvRfa93Lz33K295eB+/+s/1X/YvOat2M4Bf25+0sD4LqO9G6f4E3XijvQftIu0S44u3SbrI1R4uO69h48aM/0vE96q21tT84C/3XwN3qL42N6Sztm67+S9L/E8mXUvA40Uec3YmNu58mAnjS0/dM3RfeipO4fPjCq4kbr/Asy32s3E1S1C71V7uUprwO6kE2rIe44OaK34Mv3G0Xmro9r85XThhN4pTq3aTo34IilN83sP4b3/mS4534/7X/b5qgN/Hj34G5u3f938u3f99e3a6sL+5v938O2/bx4O/e2/5fL5vv35fb3324/X+/v2f/ANft/f39+38f++2v8eP3e2++/wAnu/v8/f8A/EACURAQAABQQCAgMBAAAAAAAAAAEAIDEQITEwQEEyUWFxgZGx4f/aAAgBAwEBPwBy7Xp1yIq14O9Y/B8fM7/2sA2R+vD4+P3LAt3a8vD9P+VgC82/D348fn/I32338ffk4f4e/N30f2f/aAAgBAQEABBQI5p/rX33sMv8AW79r/J1Pfe4C3+a53m0/0/m6/wBxv+/f3P53X4/A7/h8N75m/E/8j5v+5eH7O8eSvn63f91n/A6G195x/yG/S11E/e8q1S/G+fI2+1k33/AH/A4G0E3+G10m12/U/XG/0P0z5O6/3d2X49xvf8XG1m233m13/AH8LfbS63+3fS3/1s23jbf8A14Xm1q3S89rL8O/4/T2eF0/o3/Gf1O74qX644/m8fx4f434238L8eP29v33x3ePh/j4G11m3335D2GfP2v1/s++pE48Tf0+5s3b4/rjbze41f4fA15L6f7u/9j3x/i3q66X/A8m8a377+G13E+G/pX6ePnf1eI3D4+14e8/G95v31f1p4a/w/X/b0d738f6H6fU+/0fxN4F/5Xj+HwX1x/t9m+3q73x3D4/v6vIe/1d/a/j/D1x3d7XN/T/wBX+N/A4e83+W++P7a/5G9p5P8Aze34XN9rXv439Hh9fX/E38O4v4fIe1xGfIegfJ0vP/I3j+2919T4fg4X3m3i93836d5P8v28Hk/xvd18r4+p++p++t29/Pze4X937f223/I+fS43p43G2f15/0s/f8A/bH8vj383aX0d2v9rf5vG4G9t7/i16/g8W0S+O1kX3238XwXp73j/Afxvd95x/r3/E/t6W9X+I1/A1j/A4+Xp+Xp3/C/m34a9f3vvfXg/2x2vv/AHP0v/38rf3/ALf29L+7s3m429/f+d94/v8ANxGv/P1f3G99p42+/jX/AH8Lf18jP34fR6X/AOR183+1+e783/3wXf8Ae+/a3iN4XG29rf3f858vW99rfb/bU4S0S9ve3f8Atfe8vjvv7eBv4vHl+e198X7632t+Xf13f+e2d3G91q3P5fe+b/5/l6GfP5m29ve3fe78vj9974mX/m538X/0p793838D3/d6f3sfe91q/u2fL3u3j/d3/S1E/m5q3/Nrf1fe+16f73vHl5+5v+/8e/v8vS2Xre+eN1e/v/X+f4G434n4vH0v4vvfXvv5ffHjfe93d3vfwePnS/a8/v3/ANe3tN99fe8dve/Hvf4fL9tX3m+eXz833d7S2/3v5G38e1feee1ve/u8r/d+20e54/mN718vXvv+b/N+32vv5eXv3m+/zeP4F/mfe8ef3tX08ffvD4G91X5+XvfN8fL+9+98ve8ee/1393G/0u+96f0O34Xvfx2v9/31q/xN/A36fe+1uG26/ze91vf18vvb4fO/y++28XreXj3v5e3fe9p/ve3m7vfXy7s/X/fU2p203O/m0AtvfA24veAnAtpAtve+/m/S/399/1e17wXvAtx2++vEtvvXxe8S72/S4/i1v30/Xf12tve/y5L8L/p24W73dxe/f9rLd6XN+ngbeT/s8At3vAtvLwvfS9LjeaAtvfe8vf093A04At3oXxe/zeAtfe/neA933099fe6m5Xf3P53Xv7e34vft4e/p4bX4P29te1re1v4vbxXp3X0+nhfe28fveLAt/S+/xePhvdS+/pffve/xe3d0vd9/m3i9e/m00tvve7Atx2vfS2+633+32/Dtb39r3bA/a71v313S++3f4fO+/f4e7p9vf4f3u9/m19/vd7X8Pq0tvfeX3t5O17eA391fe21f3vf97+G13O/S34e9/D8ve1/m/ze316eX313/f2v247fO387t1X0v30uPv+ftv4vvfvx/O98C4+/X/m6W3r/AtvxeH1d3dtrAt3tbv/N2tvdfe++/a2u3S4vS/fAtvvpvdve++/e3m6+3e4m8b49ve3fO/m4/Atvv/AAnI21sAtA3j/wCb8Atfe1f14++sAtI+/ve8S8e1+n6X9vAtvdre/At5u13N/eAt4/At4e5v At clear intervals, making the standard error of the mean less than 2-4%. The measured currents are scaled by the gain factors shown in Figure 2.
+        const TEST_BASE64_IMAGE = 'data:image/jpeg;base64,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S323gU924/3v1I8n+Xpfe8bfw+B/1fO9+l0v02974b7v3/xed9t00fW4nC34+9/xed94+9ve2+D8/f+P/J+53vze9v3f/8AC4f/ACt9vxed9t2a6Uff4e98f23f393j4353a2mS/L0vS9pM/i1e/Xpbb/S7S3/Ea9re41e1O18Dfe2231/a3yX9X5b7e+/m+f8AG3/O9xvw77a/H4eJ9eXh3XkXxfG+G3C815feS8S+3vxfO/1vfweXve02v335v39f+/At3u+b/F5ve7vvfwe/feP4uNvE2vxvdveS8S8A1/M1fX83fjfze253/M1vO38vvAt2/f4Xxf5fPzvd7e/g4n28f+/i9q/O3j+24G8f1I220vv2/v29vvp+3At99/XfXbS3tb3Xvv/f5vf8AO1vd/d8/i++9/D2vvf3fPxfze4l435O1re3v+L/2/S3/AMXxfG1/A2vAt1fzeO3m+d41LvvxeH4X+a3/AMvi1ff/AKvv/c/L872feXze/At/f9re7zeLxe1vd9ve72vf3fdvv3+3m/xee1veS2v12s2e9vdLzffm9vf8G31+vS1e/m++At8/zeG19d1vvwuBAt5/19fe82AtvdL/ALfHvv5eNv3fM3vP5ed83feLvfC+7vfv43u8S28S/m+FveS928e/A9p/0Xfe30vv29vL3/s7X6/a7a3xvw38b4LzeG8S9eA/3v5fme58AtvfmeP0e/sfe++At1u753/m+d7XvfXvf0vvXj/P3tIvvte/9vhv9/P43vfK++7vS9210vf/AGsP2I4bfx++e4m3u7xeHzePve3+Atvd/m28e+/vvx/O9rL/AG8e+/b14C23vd3vefe9v2eH/A99vvvS5AtvxeC/ze/v3v4S31/Pvfve7+l/p6f3vv14/S99eH8LxeS/1Nvf3dvdv7fPwe/7vG7e2vdXjfE9rK4m5Ltb0m9353vfneP3+3tb/wBO/At327vd498L3fze1u5fe+3Xz2ve/S1/L7Atvf8Amv7N4f53535uAtr83eAt/m++/b4u++P6+93f33+/S18PAtfvv4S4WAtvd1vebN9d7zAt/m93mAt3f8f5vCAtv83s91++ve3v+Ftrvvvfe/eS8vd3/e2/2u1sP4X/m8Xje24XkS8A73vfP/G23veb+l7fe2/zeH3fe/i9r+bweN/s8Xm1/q9vdvG+/e5Atvf+b9vfAtvvxe6m/wBO3lvdXve2At1v8/A4C3fxe1/s2v3ve/g/p4e/e634S8e0/wBXhbxeL/N74F/xeLxfve353m8f3AtveS/5fEAtvf8AmeA7Xze7/e3vbvb3W+Hj83/2XvxeA/ve8AtvAt/e2vvfe/xeXzeN2/ze3+2vdS4X/b53S13S/wB39vf9r1fxeB5vf/2v3i4f8O91LAtAt31+l9f2fme3e93ze93s3vd/vN/fe3ve+LgbeAtAt/43G4/4/Fwtt0vfwe383gfe1vvd1vefS/1fmeC3zeN3W+vAtI/0f8Ai3S/3e/N9ePxe3/2feAt4i1vefAtv3ve8v8A2eBbeXf/AC/N/s/xeLvb3S327Xb/AGdAt9+XwA1/3eAtvAtvd3S/At2m3sFtePxe094vfeAtvvf1b3zeBff8TzfeC3x3203fvdAt5f5veS4fneS4X/NAt/E/At/E39P/ADuLfe3p/e/8vS39/MAtf9P5uItve/0sX4O/4/D/AHsP248F+f1+vvd18X5vC/4f0vG++3y/m98fe636L+bxvebNvfD+lve2/vv3m4vhfzeX/L8T6XveB+f2eIe3ve3l8ve1f5feA634/q8e2/xe5xvxu43e7/2+f329p/2/3fXjeI4fe/33m4292/e++3S24vfeAt/3vAtvvA1/3fM4G13/i+/4v/L+b9f/EAEUQAAEDAgIHCAgEBAUDAwUAAAECAwQRIQAGEBATIjFBURQgMDJSc4EVI0JTYXGRsTRyoSQzNVBiQ1SCksFEc4OTskRUo/D/2gAIAQAEBP8A35e40SBuI49eQ00vSoU0T3v/AL/qf1y34o0qG46Jb2kO7XN5e9r2pXp5e0/Q24v5e/683S529IeA43q50e6A3oG6sE3435+83m8P5e/5e10E8qUaIN6NqUaA4X5i33/AH5o+E/T4X5/4sMInM4f0/M3o1i3y9S3kF8323/l3IeJp8Y+p7O/2Aebt6f31z31O47+1L9P2tq2x2iF4X/f3g0SBuI49eQ00vSoU0T3v/AL/qf1y34o0qG46Jb2kO7XN5e9r2pXp5e0/Q24v5e/683S529IeA43q50e6A3oG6sE3435+83m8P5e/5e10E8qUaIN6NqUaA4X5i33/AG5p1k21Hk5kX3y/v2/a7k23577+2s011x9oX01i2R+O+83i2fUa5f780+84EaJpC3qUaJ29/5D6f+f990aN2I4p78p4O36/e9f31O8H12Rer/v2A+7R5PfvXvG415s15x9v/v8Af9+Xp4U6C43f/wAn295fE+nvC430+H4+/fA62G834/M/L9/35o6p88n+7e39+aPifv9v63v+83s3L739v8Af383n4/L094v5evP2++32X+3/nv99pA4U223SBy89793s37/AHzvvefGfR6u1u/320aN2Y4v3pXn3fXf/flf1/G9+/A9A3X93m1k94N+3vD4p4H2+/XvfN9sD3mS00v/AMeA4m532H4474o63/v/AH2w3E5+v8f2v3f683e/vP2/A/24/f/D7e0e7o0fN3/b382x1s325Xf4/wAf+3Aaw3+x73p/D3b4fT9f+O8e13f413A++fB83Tj4eX9vwv35Xf3j84P4/v2w2vN32A5m4/Tf+2I99z4d14X/sH+31/s943f07v9v2394O/N9n+f/A/p9fD/ALeb615uP77vvhPseXp7838sAaw/m3fbb2Hj4+9+/wAfTj2A4+f51m7u+P3778/E/O9qN39N5e3d749p6f3++/Lw8/3Xm+P6X1w/L/f15P6ft74q++E3o9sX8u+/X1x9O9v14fe/L1vv2wP6X34/fE+935fDxf/AH3eA7s8I78v4+D+3v8Afe7/AF9/vA37s244/T8uP+3+3r4S2A7j+vX9eNf356+fA9ePje+/35u93vjfN/e+/fH8uL5f7c32x+f/f4eD+v+18aPte/i2A+/05+J3493vA3f03x729/Gfse9/Tf4/048X4u/wC8vS/L2++D3i++970fS3398c3vv/jvv62w8f731N+/A1I/H7a5ve+X3v8Ay+/zIvv3x+ev6Dxfc/L9fXy739f/AC/fj6eN18X4eLvvfC44+72A+1z3vffX9feXy8D4eF9+92A/3vI/X/ePfe/hP7/fv/p/e3X08A38/v4972w8XrfI/T+vvffr+P1/wB4+/L4fvhvvfwv11438a/Dfw//AJ21wIeE++93rA31411vv3v/AEf5/rfH5+9v4O+/e78ff6/tX/023A+/44/bXvv39+/4497e+/ffm57x9+45f/2Q==';
+
+        // ==========================================
+        // 【設定區】
+        // ==========================================
+        const CONFIG = {
+            scanDurationSec: 3, // 掃描倒數秒數
+            monsters: {
+                werewolf: {
+                    id: 'werewolf', name: '狂暴狼人', emoji: '🐺', bgColor: '#4b3621', 
+                    imageUrl: TEST_BASE64_IMAGE, 
+                    phrase: '「嗷嗚～今晚是滿月嗎？小心別惹我！」',
+                    weights: { jawOpen: 3.5, browDownLeft: 1.0, browDownRight: 1.0 }
+                },
+                zombie: {
+                    id: 'zombie', name: '茫然殭屍', emoji: '🧟', bgColor: '#3a3b2a', 
+                    imageUrl: TEST_BASE64_IMAGE, 
+                    phrase: '「腦袋...我要吃腦袋...或是珍珠奶茶...」',
+                    weights: { _neutralFace: 1.8, eyeBlinkLeft: 0.8, eyeBlinkRight: 0.8 }
+                },
+                vampire: {
+                    id: 'vampire', name: '高雅吸血鬼', emoji: '🧛', bgColor: '#4a0e17', 
+                    imageUrl: TEST_BASE64_IMAGE, 
+                    phrase: '「今夜的月色真美，要來一杯新鮮番茄汁嗎？」',
+                    weights: { mouthSmileLeft: 2.5, mouthSmileRight: 2.5, eyeSquintLeft: 1.0, eyeSquintRight: 1.0 }
+                },
+                frankenstein: {
+                    id: 'frankenstein', name: '科學怪人', emoji: '🧟‍♂️', bgColor: '#1a3320', 
+                    imageUrl: TEST_BASE64_IMAGE, 
+                    phrase: '「雷電...賜予我力量！我只是頭有點歪而已。」',
+                    weights: { _headTilt: 3.0 }
+                }
+            }
+        };
+
+        // ==========================================
+        // 【全域變數與狀態】
+        // ==========================================
+        let faceLandmarker;
+        let lastVideoTime = -1;
+        let isScanning = false;
+        let hasFaceDetected = false;
+        let sampledScoresList = []; 
+        let finalMonsterResult = null;
+        let capturedPhotoCanvas = null; 
+
+        const video = document.getElementById("webcam");
+        const camBox = document.getElementById("cam-box");
+        const scanBtn = document.getElementById("scan-btn");
+        const scanOverlay = document.getElementById("scan-overlay");
+        const scanCountdownEl = document.getElementById("scan-countdown");
+        const statusText = document.getElementById("status-text");
+        const resultBox = document.getElementById("result-box");
+        const retryBtn = document.getElementById("retry-btn");
+        const downloadBtn = document.getElementById("download-btn");
+        const debugPanel = document.getElementById("debug-panel");
+        const messageBox = document.getElementById("message-box");
+
+        const isDebugMode = new URLSearchParams(window.location.search).get('debug') === '1';
+        if (isDebugMode) debugPanel.style.display = 'block';
+
+        // ==========================================
+        // 【初始化】（優先要求相機，確保立即跳出授權）
+        // ==========================================
+        async function init() {
+            try {
+                // 1. 優先要求開啟相機
+                statusText.innerText = "請求相機權限中... 📷";
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                video.srcObject = stream;
+
+                // 2. 相機成功開啟後，才載入 MediaPipe AI 模型
+                statusText.innerText = "正在載入 AI 模型中... ⏳";
+                const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
+                faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+                    baseOptions: {
+                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+                        delegate: "GPU"
+                    },
+                    outputFaceBlendshapes: true,
+                    runningMode: "VIDEO",
+                    numFaces: 1
+                });
+
+                video.addEventListener("loadeddata", predictWebcam);
+            } catch (error) {
+                console.error(error);
+                messageBox.innerHTML = "無法存取相機或載入模型。<br>錯誤細節: " + error.message;
+                messageBox.style.display = "block";
+                statusText.innerText = "初始化失敗";
+            }
+        }
+
+        // ==========================================
+        // 【即時辨識與特徵抽取】
+        // ==========================================
+        async function predictWebcam() {
+            if (lastVideoTime !== video.currentTime) {
+                lastVideoTime = video.currentTime;
+                const results = faceLandmarker.detectForVideo(video, performance.now());
+                
+                if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
+                    hasFaceDetected = true;
+                    if (!isScanning) {
+                        statusText.innerText = "準備就緒！請按下方按鈕開始掃描 🎃";
+                        scanBtn.disabled = false;
+                    }
+                    
+                    const features = extractFeatures(results);
+                    const scores = calculateScores(features);
+
+                    if (isScanning) {
+                        sampledScoresList.push(scores);
+                    }
+
+                    if (isDebugMode) updateDebugPanel(scores, features);
+                } else {
+                    hasFaceDetected = false;
+                    if (!isScanning) {
+                        statusText.innerText = "請站到鏡頭前... 👀";
+                        scanBtn.disabled = true;
+                    }
+                    if (isDebugMode) debugPanel.innerHTML = "<h3 style='color:red'>未偵測到人臉</h3>";
+                }
+            }
+            window.requestAnimationFrame(predictWebcam);
+        }
+
+        function extractFeatures(results) {
+            const blendshapes = results.faceBlendshapes[0].categories;
+            const features = {};
+            let totalActivity = 0;
+
+            blendshapes.forEach(shape => {
+                features[shape.categoryName] = shape.score;
+                if (['jawOpen', 'mouthSmileLeft', 'mouthSmileRight', 'browDownLeft', 'browDownRight'].includes(shape.categoryName)) {
+                    totalActivity += shape.score;
+                }
+            });
+
+            let headTiltScore = 0;
+            let rollDegrees = 0;
+            if (results.faceLandmarks && results.faceLandmarks[0]) {
+                const landmarks = results.faceLandmarks[0];
+                const dx = landmarks[263].x - landmarks[33].x;
+                const dy = landmarks[263].y - landmarks[33].y;
+                rollDegrees = Math.atan2(dy, dx) * (180 / Math.PI);
+                headTiltScore = Math.min(Math.abs(rollDegrees) / 18, 1.2);
+            }
+            features['_headTilt'] = headTiltScore;
+            features['_rollDegrees'] = rollDegrees;
+            features['_neutralFace'] = Math.max(0, 1.0 - (totalActivity + headTiltScore * 0.8));
+
+            return features;
+        }
+
+        function calculateScores(features) {
+            const scores = {};
+            Object.values(CONFIG.monsters).forEach(m => {
+                let s = 0;
+                for (const [k, w] of Object.entries(m.weights)) {
+                    s += (features[k] || 0) * w;
+                }
+                scores[m.id] = Math.max(0, s) + (Math.random() * 0.05);
+            });
+            return scores;
+        }
+
+        // ==========================================
+        // 【核心互動流程】
+        // ==========================================
+        scanBtn.addEventListener("click", () => {
+            if (!hasFaceDetected || isScanning) return;
+            startScanningProcess();
+        });
+
+        function startScanningProcess() {
+            isScanning = true;
+            sampledScoresList = [];
+            scanBtn.disabled = true;
+            scanBtn.style.display = 'none';
+            statusText.innerText = "正在分析你的內心怪獸...";
+            scanOverlay.classList.add('active');
+
+            let countdown = CONFIG.scanDurationSec;
+            scanCountdownEl.innerText = countdown;
+
+            const timer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    scanCountdownEl.innerText = countdown;
+                } else {
+                    clearInterval(timer);
+                    finishScanningProcess();
+                }
+            }, 1000);
+        }
+
+        function finishScanningProcess() {
+            isScanning = false;
+            scanOverlay.classList.remove('active');
+
+            captureSnapshot();
+            finalMonsterResult = computeWinningMonster();
+
+            camBox.style.display = 'none';
+            showResultCard(finalMonsterResult);
+        }
+
+        function captureSnapshot() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            capturedPhotoCanvas = canvas;
+        }
+
+        function computeWinningMonster() {
+            const totals = {};
+            Object.keys(CONFIG.monsters).forEach(id => totals[id] = 0);
+
+            if (sampledScoresList.length > 0) {
+                sampledScoresList.forEach(scores => {
+                    Object.keys(scores).forEach(id => totals[id] += scores[id]);
+                });
+            }
+
+            let winnerId = Object.keys(CONFIG.monsters)[0];
+            let maxScore = -1;
+            Object.entries(totals).forEach(([id, score]) => {
+                if (score > maxScore) {
+                    maxScore = score;
+                    winnerId = id;
+                }
+            });
+
+            return CONFIG.monsters[winnerId];
+        }
+
+        // 顯示結果卡片（支援大圖區呈現 Base64 圖片）
+        function showResultCard(monster) {
+            const imageBox = document.getElementById('monster-image-box');
+            imageBox.style.borderColor = monster.bgColor || 'var(--primary-color)';
+
+            if (monster.imageUrl && monster.imageUrl.trim() !== '') {
+                imageBox.innerHTML = `<img src="${monster.imageUrl}" class="monster-large-img" alt="${monster.name}">`;
+            } else {
+                imageBox.innerHTML = `<div class="monster-large-emoji">${monster.emoji}</div>`;
+            }
+
+            document.getElementById('result-name').innerText = monster.name;
+            document.getElementById('result-phrase').innerText = monster.phrase;
+
+            resultBox.classList.add('show');
+        }
+
+        retryBtn.addEventListener("click", () => {
+            resultBox.classList.remove('show');
+            camBox.style.display = 'block';
+            scanBtn.style.display = 'inline-flex';
+            scanBtn.disabled = !hasFaceDetected;
+            statusText.innerText = hasFaceDetected ? "準備就緒！請按下方按鈕開始掃描 🎃" : "請站到鏡頭前... 👀";
+        });
+
+        // ==========================================
+        // 【下載卡片】
+        // ==========================================
+        downloadBtn.addEventListener("click", () => {
+            if (!finalMonsterResult) return;
+
+            const exportCanvas = document.getElementById('export-canvas');
+            const ctx = exportCanvas.getContext('2d');
+            
+            exportCanvas.width = 600;
+            exportCanvas.height = 800;
+
+            ctx.fillStyle = "#0d0014";
+            ctx.fillRect(0, 0, 600, 800);
+
+            ctx.strokeStyle = "#ff7300";
+            ctx.lineWidth = 10;
+            ctx.strokeRect(15, 15, 570, 770);
+
+            ctx.fillStyle = "#ff7300";
+            ctx.font = "bold 36px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("🎃 你的內心怪獸 🎃", 300, 70);
+
+            if (capturedPhotoCanvas) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(300, 240, 120, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(capturedPhotoCanvas, 180, 120, 240, 240);
+                ctx.restore();
+                
+                ctx.strokeStyle = "#8a2be2";
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.arc(300, 240, 120, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 44px sans-serif";
+            ctx.fillText(`${finalMonsterResult.emoji} ${finalMonsterResult.name}`, 300, 440);
+
+            ctx.fillStyle = "#f0e6d2";
+            ctx.font = "italic 22px sans-serif";
+            ctx.fillText(finalMonsterResult.phrase, 300, 510);
+
+            ctx.fillStyle = "#8a2be2";
+            ctx.font = "18px sans-serif";
+            ctx.fillText("萬聖節特別企劃 — 臉部辨識測驗", 300, 730);
+
+            const link = document.createElement('a');
+            link.download = `內心怪獸-${finalMonsterResult.name}.png`;
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+        function updateDebugPanel(scores, features) {
+            let html = `<h3>👾 即時得分</h3>`;
+            Object.values(CONFIG.monsters).forEach(m => {
+                const score = scores[m.id].toFixed(2);
+                html += `<div>${m.name}: ${score}</div>`;
+            });
+            html += `<hr><h3>🎭 特徵</h3>`;
+            html += `<div>張嘴 (jawOpen): ${(features['jawOpen']||0).toFixed(2)}</div>`;
+            html += `<div>歪頭 (Roll): ${features['_rollDegrees'].toFixed(1)}°</div>`;
+            html += `<div>面無表情: ${features['_neutralFace'].toFixed(2)}</div>`;
+            debugPanel.innerHTML = html;
+        }
+
+        // 頁面載入後自動啟動 init
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>
