@@ -6,661 +6,289 @@
     <title>你的內心怪獸 🎃</title>
     <style>
         :root {
-            --bg-color: #0d0014;
+            --bg-color: #12001a;
             --text-color: #f0e6d2;
             --primary-color: #ff7300;
             --secondary-color: #8a2be2;
-            --card-bg: rgba(25, 15, 38, 0.9);
+            --error-color: #ff3333;
         }
-        * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 20px 10px;
+            padding: 0;
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
+            overflow: hidden;
         }
         h1 {
             color: var(--primary-color);
-            text-shadow: 0 0 10px rgba(255, 115, 0, 0.5);
-            margin: 0 0 20px 0;
-            text-align: center;
-            font-size: 2.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
         }
-        
-        /* 中央主要容器 */
-        #stage-container {
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        /* 鏡像相機區 */
-        #cam-box {
+        #app-container {
             position: relative;
             width: 100%;
+            max-width: 640px;
             aspect-ratio: 4/3;
             background: #000;
             border: 3px solid var(--secondary-color);
-            border-radius: 16px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 0 25px rgba(138, 43, 226, 0.4);
-            transition: all 0.5s ease;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
         }
+        /* 相機畫面需鏡像顯示 */
         #webcam {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* 鏡像 */
+            transform: scaleX(-1);
         }
-
-        /* 掃描動畫覆蓋層 */
-        #scan-overlay {
+        #status-overlay {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.2);
-        }
-        #scan-overlay.active {
-            display: flex;
-        }
-        /* 雷射掃描線 */
-        .scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, var(--primary-color), #fff, var(--primary-color), transparent);
-            box-shadow: 0 0 15px var(--primary-color);
-            animation: scanMove 1.5s ease-in-out infinite alternate;
-        }
-        @keyframes scanMove {
-            0% { top: 5%; }
-            100% { top: 95%; }
-        }
-        .scan-countdown {
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-shadow: 0 0 20px #000;
-            animation: pulse 0.5s infinite alternate;
-        }
-
-        /* 狀態提示字 */
-        #status-text {
-            position: absolute;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.75);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            color: var(--primary-color);
-            white-space: nowrap;
-        }
-
-        /* 結果展示頁（掃描完成後顯示） */
-        #result-box {
-            display: none;
-            width: 100%;
-            background: var(--card-bg);
-            border: 3px solid var(--primary-color);
-            border-radius: 16px;
-            padding: 20px;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(255, 115, 0, 0.3);
-            animation: fadeIn 0.6s ease-out forwards;
-        }
-        #result-box.show {
-            display: flex;
-        }
-
-        /* 大圖呈現區（4:3 比例展示） */
-        .monster-image-container {
-            width: 100%;
-            max-width: 440px;
-            aspect-ratio: 4/3;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
-            border: 3px solid var(--primary-color);
-            box-shadow: 0 0 20px rgba(255, 115, 0, 0.3);
-            overflow: hidden;
-            background: #111;
-        }
-        .monster-large-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .monster-large-emoji {
-            font-size: 110px;
-            line-height: 1;
-        }
-
-        .monster-name {
-            font-size: 2.2rem;
-            font-weight: bold;
-            color: #fff;
-            margin: 5px 0 8px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        }
-        .monster-phrase {
-            font-size: 1.1rem;
-            color: #ddd;
-            font-style: italic;
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-
-        /* 按鈕風格 */
-        .btn {
-            background: linear-gradient(135deg, var(--primary-color), #d05000);
-            color: #fff;
-            border: none;
-            padding: 14px 28px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 115, 0, 0.4);
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            max-width: 320px;
-        }
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 115, 0, 0.6);
-        }
-        .btn:active:not(:disabled) {
-            transform: translateY(1px);
-        }
-        .btn:disabled {
-            background: #555;
-            cursor: not-allowed;
-            box-shadow: none;
-            opacity: 0.6;
-        }
-        .btn-secondary {
-            background: linear-gradient(135deg, var(--secondary-color), #5a189a);
-            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
-        }
-        
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            align-items: center;
-            margin-top: 5px;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes pulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.1); }
-        }
-
-        #message-box {
-            position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 51, 51, 0.9);
-            padding: 15px 30px;
-            border-radius: 10px;
-            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            color: var(--primary-color);
             font-weight: bold;
-            z-index: 100;
-            display: none;
+            z-index: 10;
+        }
+        #message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--primary-color);
+            z-index: 20;
+            display: none;
+        }
+        #message-box.error {
+            border-color: var(--error-color);
+            color: var(--error-color);
         }
         
-        /* 除錯面板 */
+        /* 除錯面板樣式 */
         #debug-panel {
-            position: fixed;
-            top: 0; right: 0; bottom: 0;
-            width: 280px;
-            background: rgba(0, 0, 0, 0.85);
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.8);
             color: #0f0;
             font-family: monospace;
-            font-size: 11px;
-            padding: 15px;
+            font-size: 10px;
+            padding: 10px;
             overflow-y: auto;
-            z-index: 50;
+            z-index: 30;
             display: none;
         }
     </style>
 </head>
 <body>
 
-    <h1>你的內心怪獸 🎃</h1>
-    <div id="message-box"></div>
+    <h1>你的內心怪獸</h1>
     
-    <div id="stage-container">
-        <!-- 相機區 -->
-        <div id="cam-box">
-            <video id="webcam" autoplay playsinline></video>
-            
-            <!-- 掃描特效與倒數 -->
-            <div id="scan-overlay">
-                <div class="scan-line"></div>
-                <div class="scan-countdown" id="scan-countdown">3</div>
-            </div>
-            
-            <div id="status-text">相機初始化中...</div>
-        </div>
-
-        <!-- 偵測按鈕（初始狀態） -->
-        <button id="scan-btn" class="btn" disabled>🔮 掃描我的內心怪獸</button>
-
-        <!-- 結果頁面（掃描完成後替代相機出現） -->
-        <div id="result-box">
-            <div class="monster-image-container" id="monster-image-box">
-                <!-- 動態填入大圖片或 Emoji -->
-            </div>
-            
-            <div class="monster-name" id="result-name">怪獸名稱</div>
-            <div class="monster-phrase" id="result-phrase">怪獸一句話台詞</div>
-
-            <div class="button-group">
-                <button id="download-btn" class="btn">📸 下載怪獸結果卡片</button>
-                <button id="retry-btn" class="btn btn-secondary">🔄 重新掃描</button>
-            </div>
-        </div>
+    <div id="app-container">
+        <video id="webcam" autoplay playsinline></video>
+        <div id="status-overlay">系統載入中... 🦇</div>
+        <div id="message-box"></div>
+        <div id="debug-panel"></div>
     </div>
 
-    <!-- 用於合成下載卡片的隱藏 Canvas -->
-    <canvas id="export-canvas" style="display:none;"></canvas>
-
-    <div id="debug-panel"></div>
-
-    <!-- 使用標準 ES Module 方式引入 MediaPipe Tasks Vision -->
+    <!-- 匯入 MediaPipe 的 ES Module -->
     <script type="module">
         import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs";
 
         // ==========================================
-        // 【測試用 Base64 圖片】
-        // ==========================================
-        const TEST_BASE64_IMAGE = 'data:image/jpeg;base64,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3m8f3u8G971vfHze/s8fC3vze0F3/m4/AtvS4+7x/O+F3g3v5vfw3u+At5+Atv/F7fe3p/M4S20C3m+8ePAtveS/zfve/L9vf9P/JpveaAt8G++/L08C4303v3e/At97/vAt/S/xe1feXneS8e/reF/S3ePxe++N95s35f8rSAtv/EADYRAAEEAQMDAgUDAgYCAwEAAAEAAgMRIRIxQRBRBCAiEzAycBRCYVJicCMzQ3KCkaEkscFC/9oACAE38AD02m+2S4v14/7r32/f3/h+4/z+/b3N49+G6P5f/f06f56e0v/I7f369Gfx+5Xp/6x01/0+2i9v5fv7Ie/u73a8e99v4XfvA2+97O9vfYfb235aev43d/pffc/b3P8+3DfvfvA9v5PvA94aP4f/f0Nf227ve/Gj/v2aK4/m/L7f573H8v2+xvf+T9veHcfzfv+29n5vb2/x/x7/u0/u/9v0H/AH/f+9nf5a/4/n+iX/ePf333v30P5fv5+20s/S1O2p21O2p229O23p229O23p229O23p229O22fP09vfPnb+fv+/vAt+d++s1/wBPAt382p22+/24fvve9vfAt/A++O38fXAtSfb+3sAt/wA3e34vvv3v0+/i3t10p2p2p2p2p/3fxe46Gve/f+eAt4vM/e9/829vNAt4FvN2/e93fHbwPvf83e++5X3f0X8feA++/H23AtvX36C0O1AnAtAt5u0AtvfA32pAt3fXf/u9At16/C1AnA7fNreAnAt4e3AtO3/m3At3g3/a/S93vAtveS/S9/s83a3fvv8/u2++29/u58mAtvve3At79730ve/4tX/f77f5X3+f+Fve9vfeAtAtve8vf5G8S8ff29v1A+/yv+3v/EAEAQABAgBAMEBwYFBAMBAQEAAAECEQADITEEEkETUWFxBSCBkcEUIjJSobEVI0JicoJDU3OSMOHxosLRkOHyM//aAAgBAQAGPwAaw59mFmC8I3I6+6B3P3x4CEK242s1A5U48D3I8Iww82d4/h99L/s+P3x4CO38L/A4X38mN/wByO8eAjs44jO4e3u4f3jS2a5j2eM42s2dI3Lp4YnhP83m20o2d2/x7+f/APeXqjs2O2y2X/s1o7Mfs31X+vD3ezA2y5z2/wB1v3Y+84p42k52z/s73a21vE+O/X3d3D648B3U+IeIjsX/AMjC/wDXw28v7/H2e/f/AMcOB/k/d1x9S4iPAd1PiP2R4D3sL7k3I8B+yO0eAjsf/wDDC+9hvh2f/e5sR4e6aR4m/S493EfyX3cP7s1/3cR+0N61p0u3f4sY8xH2kfZ/a/x8D7mI/lx93XvY8933jX/AHmJ733m92P4ffsT3m42x3f/AL33f7M11p3fvN7uf7mE979313v4/S3vx8+8fA99m91a0p9q72sX4b3E/m+/1G954O/fP4I/a1/3eL/x/e++f/uN//e8NqX6XvvN9e9x3fvX4a99q928+XffS7+/f999f8/2t3P/AE3+xvvp32f81+D3/m3/ANL/AM+/x30x4Xw/Pfv8I/u16091uF8Hq3C1e6Xv0evvvfXvv5ff/a4atfeS+sS8d4eL3+/evd93Pff1/a9/d++l7/P04f933f/AE3f/e++1vf4X5fXvvv433a763t70N/H7019/wCvO++m333XvvfA++H3q533vf5O+/S935fe/evx469/5fvef/3vfC9/xvr79Xv96fS+sN7vf31f2334++t97s796++/T/731v7sN++7m/m/vf31vvS8X1vv3j3vvff/vv/ANL33vfvvv535fA3/a3xfe+/+/f820vf/wDf7ve9Xvv/AOf/AE32v4ve7Xvvvfvv33m2vf8An/3/ANv9tfm3v0733/8AT+be/DffW++/m++/1XvX3799/m3vxve9+/073/f3v3rffq3X/I3/AD/zvv4m+/G3v+/v12f/AE3f83v/ADevfv8AO9/17/i9f3p1574m++/S/L3m3ve++vfvd2pX4P8AN9+/5vf5vvf/AN1469/i16/f/wAN++/3pv8AOnXv1/s0mffy+/G/9vfS+vve34v04ve++f4v35O/4fe7/N6eL9++4O++/m2++/N14/f3vf5/vf8AO383v834+G+/f+eP+/zfffhvfvv3+vvf24/f/D7/AN6/e9/xe++D3fvvxeX/AN/O+vv33eXf+fvx+/8A6fzevv1++vxe+/vvvvfevv33+fff+/1e+3ffS++7m/fe/vv3/X1f/9oACAEBAAEFAf2f6+5pB14+LqR+2l/H5UvI8D/T0mX1eR4/8iH06T/ACjInJmEaXkS1o6/Mh7d0XmU9P28v3I/qOInY7UoY21eUaJ3A6XkY/Xp+1fM4pI5UuDkf8AipUf22v9mXf3eTqXk/rS9p8u7IipUfx0/sy8iXlS25X/AH0/szI8jx0vv18t5eHjLqM/Lp8+f849p4CfvqO2MfbUn7mIn29H42j4+7M39r2v5u2p+4X99b2X0+xIn/p/o/3IevLqD336kfb31X36/u6u04f/AM+j3/2e33+8m+IenU3wA1/33vXmG83x0/iH7/72f4eP/kR96L+xN6evl336A/e+5n++/M7f+v/AJf5v31xL9x/A+/8f/j8d9/7p1/2++7X8XpS8vD424XvvvfX8993vf2eF/X39+1/N8433/e1vf1vvvd1vv46vI1vvvze9vd30eL33v1+VvdN99O959vdLve6/ne96e4+370vC/t/t/F+/53+/xL313+fvve/X4m/wB/ffHvfL3vvfv3m++/71++9194+A++3zL60vfe66XvzeX/AOPm73/fze++/feS1O++/e3/ADff579S3e/ze9/k74fe/f3+zeS9++/H099738n33621vIvvfeS7fHfv0vveS5290fG931vL/3++1vfe/wA/v/0v/8QAMREAAAMFBQUIAwEAAAAAAAAAAAEAESAxIUFRIjJhcaIQE1CBsXKR4fDh8VBgweEE/9oACAEDAQE/AOpQfF3e7O73Z9y3Z9y3Z7lt2fct2fcsB/O5p2d+eE1eK4R+26Pq04R+032u6P204R2G3X9sR+03Rst4Aog1B4fM3D5m8D5m4fM333qL3o38Sgt00T+5p4fM34N4/sXvfR953mO52X2+q0/lWl7sWf3T2X076/wAU4oIeAtjS3/Cst3U6f7/LszJ8v4m3S/CspnF9sD5SsyE2i2yGAn0H3LdI7fI338/5v/EAC0RAAAGAQMDBAEDBQAAAAAAAAECAwQFEQASBhAgISIwMTITFEFRBVBgcXKC/9oACAECAQE/ANe1e3X2/S0S7kYx2442O8lA45mSj4x3XU9X8S580579e0vV8S540pP92/I/T49s4iIn/S0aI2Uu5i360Y/I5090o2Q30/E3H+R9+wT/b23m7IByA9+o2sHjRj79S1I+H9O3a+X8v45UeI4aNfxr19v46f3+k/4eL5fy5aK35x8jG12DUpv4XU472f8X/H/I23/x/3dI/p5X3f0jO8/sZ6804v2eP98jO3xsn2eL9ni/a4yPInm+X+eK4pBmy1Gef2eOn2s0b5j+/29S0+N8y8Pq+LpP/EADMRAAECAwYFAwMDBQEAAAAAAAECAAMRAAQSITFBInGAkfBRUWEQgaEysfETMFKC4cFy/9oACAEDAQE/ANx9m2XqK4P1F4/1A5AfeN0f3Oq5i9qfO4vC5v9qfO+vC5vD91f7j/sE8oIny1M01mBygU0aH1qUu276i/rR84/2y1F8f7U2OaD15f2z3aYmQJ8/j/fDOnF4E74p04vAnfE44xHn39mXN8oXvBUnAnfSFFpS5XAnXSB13j7NsvUVwf4p4eM1pUpQ4E4e3x6R/d6rnL929p8r68L30q4R++f3+X/xAA4EAACAQICBwcEAgAGAwEAAAABAgADEQQSIRATIjEyQVFxICM0QlJTYYKRpQUzcoOTscEwNEOC/9oACAEBAAY/APyv5T3mXymE6v3iX4/9o2N1qf5/fRrtp28/3eX4i402120e3m1b0O/e+Xyq0jS/3f5fF4l/3+/fzeX428nxU94l34Gf3/wCKm3Pz+X438nxU+/xK01/f99N/u3v4/l+NvJ8VJ/9O3m3/AE/P5fj3m625O6/9vB4l8fx/8mP4/v2a00/e+Xf/AM199v8A3O4/m7z3X+b1I3X/ALiA/f356x/91/sO4vzeE2G/5/u7fA3/ALn/AK7XvXvX/s41vG531L+G/vN99/L339x+2f1P23p3381Nvf/x3s3/a/wBh39/8fe6G/wBzeze/3r4i3/fze/m/ve314fS58eEw+I8fw513u5I3/m+d5+e983v5/L8L+f4/C3eX8X8/m5d9/C/l4XqI3Xv3uN5+e1r4aX4/C/4v5/N34X43vG2uNvefxp4fS/h3m+34P2P2fve/f43u5/ve4aI8OHf95vfXvef6eD3+d9fze3/S1/Lve06A53x2A9zfe5+E+/xO88L3+U/lze5/vd32vS/179/C4xvh7fe9/L4fe4b/AJfe/S+/i3G23P6f1P3Xve99Nf5/p4e/ze2v8/1L3qX/AOPnefhvh5946v1N5e2vwvhN3ve43t6i9r6b2/a33L4/G3p225ve+vwv4fS4a/5Phv/x41/v4G131vePfe5L3+/308L3iA+/e1/ze38vS1/O94/C3m2vC/h435/D3e/pvev30/8Ae18x79/M5e/0I3P7++vfvefv3vfRve4vT00A7veN99Pfe3hS9/j7ve+183r3vne3pT95s93vF4ne8O/x+Ufeenpve2x/3vU/e3a8934vX4e/vvd4X4339/4/veb2m8Xv3++S3v708L3a74/p6+P+e112NfeN3vd1eN3d58/3I/D3v9vhXvd2+I5m/f4S7/AOvhDve4Hfe+18X63u/p63++lqN5++v3i8aXN73t7/e335vU/fX6fC1/l7++S1/kL46S/r7x3i+v1A8P3++x9+C59/C19Pve/4X+/30vd3Ivvvd6G3+1veH4v3Xze4b4v30733O393Xv7A43v5v99/D3e1/4v5fevS2vwvjvh76fe9/L43vd4X1N1d3pvdv9feP8Ph32fXpL976/v3vv/h39/8An3t3/9k=';
-
-        // ==========================================
-        // 【設定區】
+        // 【設定區】方便之後調整的 CONFIG 物件
         // ==========================================
         const CONFIG = {
-            scanDurationSec: 3, // 掃描倒數秒數
             monsters: {
                 werewolf: {
-                    id: 'werewolf', name: '狂暴狼人', emoji: '🐺', bgColor: '#4b3621', 
-                    imageUrl: './frank.jpg', 
-                    phrase: '「嗷嗚～今晚是滿月嗎？小心別惹我！」',
-                    weights: { jawOpen: 3.5, browDownLeft: 1.0, browDownRight: 1.0 }
-                },
-                zombie: {
-                    id: 'zombie', name: '茫然殭屍', emoji: '🧟', bgColor: '#3a3b2a', 
-                    imageUrl: './frank.jpg', 
-                    phrase: '「腦袋...我要吃腦袋...或是珍珠奶茶...」',
-                    weights: { _neutralFace: 1.8, eyeBlinkLeft: 0.8, eyeBlinkRight: 0.8 }
+                    id: 'werewolf',
+                    name: '狼人',
+                    emoji: '🐺',
+                    color: '#8B4513',
+                    imageUrl: './frank.jpg', // 預留圖片網址
+                    weights: { browDownLeft: 1.0, browDownRight: 1.0, jawOpen: 1.5 }
                 },
                 vampire: {
-                    id: 'vampire', name: '高雅吸血鬼', emoji: '🧛', bgColor: '#4a0e17', 
-                    imageUrl: './frank.jpg', 
-                    phrase: '「今夜的月色真美，要來一杯新鮮番茄汁嗎？」',
-                    weights: { mouthSmileLeft: 2.5, mouthSmileRight: 2.5, eyeSquintLeft: 1.0, eyeSquintRight: 1.0 }
+                    id: 'vampire',
+                    name: '吸血鬼',
+                    emoji: '🧛',
+                    color: '#800000',
+                    imageUrl: './frank.jpg',
+                    weights: { mouthSmileLeft: 0.5, mouthSmileRight: 0.5, eyeSquintLeft: 1.2, eyeSquintRight: 1.2 }
                 },
                 frankenstein: {
-                    id: 'frankenstein', name: '科學怪人', emoji: '🧟‍♂️', bgColor: '#1a3320', 
-                    imageUrl: './frank.jpg', 
-                    phrase: '「雷電...賜予我力量！我只是頭有點歪而已。」',
-                    weights: { _headTilt: 3.0 }
+                    id: 'frankenstein',
+                    name: '科學怪人',
+                    emoji: '🧟‍♂️',
+                    color: '#2E8B57',
+                    imageUrl: './frank.jpg',
+                    weights: { headTilt: 2.0 } // 特別為科學怪人預留的頭部傾斜權重
+                },
+                zombie: {
+                    id: 'zombie',
+                    name: '殭屍',
+                    emoji: '🧟',
+                    color: '#556B2F',
+                    imageUrl: './frank.jpg',
+                    weights: { eyeBlinkLeft: 0.8, eyeBlinkRight: 0.8, jawOpen: 0.5 }
                 }
             }
         };
 
         // ==========================================
-        // 【全域變數與狀態】
+        // 【全域變數】
         // ==========================================
         let faceLandmarker;
         let lastVideoTime = -1;
-        let isScanning = false;
-        let hasFaceDetected = false;
-        let sampledScoresList = []; 
-        let finalMonsterResult = null;
-        let capturedPhotoCanvas = null; 
-
         const video = document.getElementById("webcam");
-        const camBox = document.getElementById("cam-box");
-        const scanBtn = document.getElementById("scan-btn");
-        const scanOverlay = document.getElementById("scan-overlay");
-        const scanCountdownEl = document.getElementById("scan-countdown");
-        const statusText = document.getElementById("status-text");
-        const resultBox = document.getElementById("result-box");
-        const retryBtn = document.getElementById("retry-btn");
-        const downloadBtn = document.getElementById("download-btn");
-        const debugPanel = document.getElementById("debug-panel");
+        const statusOverlay = document.getElementById("status-overlay");
         const messageBox = document.getElementById("message-box");
+        const debugPanel = document.getElementById("debug-panel");
 
-        const isDebugMode = new URLSearchParams(window.location.search).get('debug') === '1';
-        if (isDebugMode) debugPanel.style.display = 'block';
+        // 檢查是否開啟除錯模式 (?debug=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDebugMode = urlParams.get('debug') === '1';
+        if (isDebugMode) {
+            debugPanel.style.display = 'block';
+        }
 
         // ==========================================
-        // 【初始化】（優先要求相機權限，確保立即跳出授權）
+        // 【初始化與載入】
         // ==========================================
         async function init() {
-    try {
-        // 1. 優先請求相機權限
-        statusText.innerText = "請求相機權限中... 📷";
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        video.srcObject = stream;
+            try {
+                // 1. 載入 MediaPipe Face Landmarker 模型 (固定版本號 0.10.12)
+                const filesetResolver = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm"
+                );
+                
+                faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+                    baseOptions: {
+                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+                        delegate: "GPU"
+                    },
+                    outputFaceBlendshapes: true,         // 開啟表情特徵值輸出
+                    outputFacialTransformationMatrixes: true, // 開啟頭部姿態矩陣
+                    runningMode: "VIDEO",
+                    numFaces: 1
+                });
 
-        // 2. 載入 MediaPipe AI 模型（改用 CPU 確保最高相容性）
-        statusText.innerText = "正在載入 AI 模型中... ⏳";
-        const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
-        
-        faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-            baseOptions: {
-                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-                delegate: "CPU" // 👈 改為 CPU，避免部分電腦 GPU 卡死
-            },
-            outputFaceBlendshapes: true,
-            runningMode: "VIDEO",
-            numFaces: 1
-        });
+                statusOverlay.innerText = "請求相機權限中... 📷";
 
-        statusText.innerText = "請站到鏡頭前... 👀";
-        video.addEventListener("loadeddata", predictWebcam);
-    } catch (error) {
-        console.error("初始化失敗:", error);
-        messageBox.innerHTML = "無法開啟相機或載入模型。<br>錯誤細節: " + error.message;
-        messageBox.style.display = "block";
-        statusText.innerText = "載入失敗";
-    }
-});
-
+                // 2. 開啟攝影機
+                const constraints = { video: { facingMode: "user" } };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                
                 video.addEventListener("loadeddata", predictWebcam);
             } catch (error) {
-                console.error("初始化失敗:", error);
-                messageBox.innerHTML = "無法存取相機或載入 AI 模型。<br>錯誤細節: " + error.message;
-                messageBox.style.display = "block";
-                statusText.innerText = "初始化失敗";
+                console.error(error);
+                showError("無法存取相機。<br>請確認您的裝置擁有相機，並已允許網頁存取相機權限。");
+                statusOverlay.style.display = 'none';
             }
         }
 
         // ==========================================
-        // 【即時辨識與特徵抽取】
+        // 【主循環：偵測與更新】
         // ==========================================
         async function predictWebcam() {
+            let startTimeMs = performance.now();
+            
+            // 確保影片有在播放且時間有前進才進行推論
             if (lastVideoTime !== video.currentTime) {
                 lastVideoTime = video.currentTime;
-                const results = faceLandmarker.detectForVideo(video, performance.now());
+                
+                // 進行人臉偵測
+                const results = faceLandmarker.detectForVideo(video, startTimeMs);
                 
                 if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
-                    hasFaceDetected = true;
-                    if (!isScanning) {
-                        statusText.innerText = "準備就緒！請按下方按鈕開始掃描 🎃";
-                        scanBtn.disabled = false;
-                    }
+                    statusOverlay.innerText = "已偵測到人臉 👻";
                     
-                    const features = extractFeatures(results);
-                    const scores = calculateScores(features);
-
-                    if (isScanning) {
-                        sampledScoresList.push(scores);
+                    if (isDebugMode) {
+                        updateDebugInfo(results);
                     }
-
-                    if (isDebugMode) updateDebugPanel(scores, features);
                 } else {
-                    hasFaceDetected = false;
-                    if (!isScanning) {
-                        statusText.innerText = "請站到鏡頭前... 👀";
-                        scanBtn.disabled = true;
+                    statusOverlay.innerText = "未偵測到人臉...";
+                    if (isDebugMode) {
+                        debugPanel.innerHTML = "等待人臉中...";
                     }
-                    if (isDebugMode) debugPanel.innerHTML = "<h3 style='color:red'>未偵測到人臉</h3>";
                 }
             }
+            
+            // 透過 requestAnimationFrame 不斷循環
             window.requestAnimationFrame(predictWebcam);
         }
 
-        function extractFeatures(results) {
-            const blendshapes = results.faceBlendshapes[0].categories;
-            const features = {};
-            let totalActivity = 0;
-
-            blendshapes.forEach(shape => {
-                features[shape.categoryName] = shape.score;
-                if (['jawOpen', 'mouthSmileLeft', 'mouthSmileRight', 'browDownLeft', 'browDownRight'].includes(shape.categoryName)) {
-                    totalActivity += shape.score;
-                }
-            });
-
-            let headTiltScore = 0;
-            let rollDegrees = 0;
-            if (results.faceLandmarks && results.faceLandmarks[0]) {
-                const landmarks = results.faceLandmarks[0];
-                const dx = landmarks[263].x - landmarks[33].x;
-                const dy = landmarks[263].y - landmarks[33].y;
-                rollDegrees = Math.atan2(dy, dx) * (180 / Math.PI);
-                headTiltScore = Math.min(Math.abs(rollDegrees) / 18, 1.2);
-            }
-            features['_headTilt'] = headTiltScore;
-            features['_rollDegrees'] = rollDegrees;
-            features['_neutralFace'] = Math.max(0, 1.0 - (totalActivity + headTiltScore * 0.8));
-
-            return features;
-        }
-
-        function calculateScores(features) {
-            const scores = {};
-            Object.values(CONFIG.monsters).forEach(m => {
-                let s = 0;
-                for (const [k, w] of Object.entries(m.weights)) {
-                    s += (features[k] || 0) * w;
-                }
-                scores[m.id] = Math.max(0, s) + (Math.random() * 0.05);
-            });
-            return scores;
-        }
-
         // ==========================================
-        // 【核心互動流程】
+        // 【輔助函式】
         // ==========================================
-        scanBtn.addEventListener("click", () => {
-            if (!hasFaceDetected || isScanning) return;
-            startScanningProcess();
-        });
-
-        function startScanningProcess() {
-            isScanning = true;
-            sampledScoresList = [];
-            scanBtn.disabled = true;
-            scanBtn.style.display = 'none';
-            statusText.innerText = "正在分析你的內心怪獸...";
-            scanOverlay.classList.add('active');
-
-            let countdown = CONFIG.scanDurationSec;
-            scanCountdownEl.innerText = countdown;
-
-            const timer = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    scanCountdownEl.innerText = countdown;
-                } else {
-                    clearInterval(timer);
-                    finishScanningProcess();
-                }
-            }, 1000);
+        function showError(msg) {
+            messageBox.innerHTML = msg;
+            messageBox.className = "error";
+            messageBox.style.display = "block";
         }
 
-        function finishScanningProcess() {
-            isScanning = false;
-            scanOverlay.classList.remove('active');
-
-            captureSnapshot();
-            finalMonsterResult = computeWinningMonster();
-
-            camBox.style.display = 'none';
-            showResultCard(finalMonsterResult);
-        }
-
-        function captureSnapshot() {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
-            const ctx = canvas.getContext('2d');
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            capturedPhotoCanvas = canvas;
-        }
-
-        function computeWinningMonster() {
-            const totals = {};
-            Object.keys(CONFIG.monsters).forEach(id => totals[id] = 0);
-
-            if (sampledScoresList.length > 0) {
-                sampledScoresList.forEach(scores => {
-                    Object.keys(scores).forEach(id => totals[id] += scores[id]);
-                });
-            }
-
-            let winnerId = Object.keys(CONFIG.monsters)[0];
-            let maxScore = -1;
-            Object.entries(totals).forEach(([id, score]) => {
-                if (score > maxScore) {
-                    maxScore = score;
-                    winnerId = id;
-                }
-            });
-
-            return CONFIG.monsters[winnerId];
-        }
-
-        // 顯示結果卡片（支援大圖區呈現 Base64 圖片）
-        function showResultCard(monster) {
-            const imageBox = document.getElementById('monster-image-box');
-            imageBox.style.borderColor = monster.bgColor || 'var(--primary-color)';
-
-            if (monster.imageUrl && monster.imageUrl.trim() !== '') {
-                imageBox.innerHTML = `<img src="${monster.imageUrl}" class="monster-large-img" alt="${monster.name}">`;
-            } else {
-                imageBox.innerHTML = `<div class="monster-large-emoji">${monster.emoji}</div>`;
-            }
-
-            document.getElementById('result-name').innerText = monster.name;
-            document.getElementById('result-phrase').innerText = monster.phrase;
-
-            resultBox.classList.add('show');
-        }
-
-        retryBtn.addEventListener("click", () => {
-            resultBox.classList.remove('show');
-            camBox.style.display = 'block';
-            scanBtn.style.display = 'inline-flex';
-            scanBtn.disabled = !hasFaceDetected;
-            statusText.innerText = hasFaceDetected ? "準備就緒！請按下方按鈕開始掃描 🎃" : "請站到鏡頭前... 👀";
-        });
-
-        // ==========================================
-        // 【下載卡片】
-        // ==========================================
-        downloadBtn.addEventListener("click", () => {
-            if (!finalMonsterResult) return;
-
-            const exportCanvas = document.getElementById('export-canvas');
-            const ctx = exportCanvas.getContext('2d');
+        // 除錯模式：顯示即時數據
+        function updateDebugInfo(results) {
+            let html = "<h3>Debug Mode</h3>";
             
-            exportCanvas.width = 600;
-            exportCanvas.height = 800;
+            // 取得第一張臉的 Blendshapes
+            const blendshapes = results.faceBlendshapes[0].categories;
+            
+            // 挑選我們在 CONFIG 裡會用到的特定表情來監控
+            const trackedShapes = [
+                'browDownLeft', 'browDownRight', 
+                'jawOpen', 
+                'mouthSmileLeft', 'mouthSmileRight', 
+                'eyeSquintLeft', 'eyeSquintRight',
+                'eyeBlinkLeft', 'eyeBlinkRight'
+            ];
 
-            ctx.fillStyle = "#0d0014";
-            ctx.fillRect(0, 0, 600, 800);
+            html += "<h4>Blendshapes:</h4>";
+            blendshapes.forEach(shape => {
+                if (trackedShapes.includes(shape.categoryName) || shape.score > 0.5) {
+                    // 若數值大於 0.5 或屬於我們關注的類別，則顯示出來
+                    const color = trackedShapes.includes(shape.categoryName) ? '#ff0' : '#0f0';
+                    html += `<div style="color:${color}">${shape.categoryName}: ${shape.score.toFixed(3)}</div>`;
+                }
+            });
 
-            ctx.strokeStyle = "#ff7300";
-            ctx.lineWidth = 10;
-            ctx.strokeRect(15, 15, 570, 770);
-
-            ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 36px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("🎃 你的內心怪獸 🎃", 300, 70);
-
-            if (capturedPhotoCanvas) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(300, 240, 120, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(capturedPhotoCanvas, 180, 120, 240, 240);
-                ctx.restore();
+            // 簡單計算一下頭部傾斜 (利用變換矩陣)
+            if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
+                const matrix = results.facialTransformationMatrixes[0].data;
+                // 從 4x4 矩陣中提取簡單的傾斜指標 (這裡只是粗略的旋轉分量作為預覽)
+                const pitch = Math.asin(-matrix[6]) * (180 / Math.PI);
+                const yaw = Math.atan2(matrix[2], matrix[10]) * (180 / Math.PI);
+                const roll = Math.atan2(matrix[4], matrix[5]) * (180 / Math.PI);
                 
-                ctx.strokeStyle = "#8a2be2";
-                ctx.lineWidth = 6;
-                ctx.beginPath();
-                ctx.arc(300, 240, 120, 0, Math.PI * 2);
-                ctx.stroke();
+                html += "<h4>Head Pose:</h4>";
+                html += `<div>Pitch (上下): ${pitch.toFixed(1)}°</div>`;
+                html += `<div>Yaw (左右): ${yaw.toFixed(1)}°</div>`;
+                html += `<div>Roll (歪頭): ${roll.toFixed(1)}°</div>`;
             }
 
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 44px sans-serif";
-            ctx.fillText(`${finalMonsterResult.emoji} ${finalMonsterResult.name}`, 300, 440);
-
-            ctx.fillStyle = "#f0e6d2";
-            ctx.font = "italic 22px sans-serif";
-            ctx.fillText(finalMonsterResult.phrase, 300, 510);
-
-            ctx.fillStyle = "#8a2be2";
-            ctx.font = "18px sans-serif";
-            ctx.fillText("萬聖節特別企劃 — 臉部辨識測驗", 300, 730);
-
-            const link = document.createElement('a');
-            link.download = `內心怪獸-${finalMonsterResult.name}.png`;
-            link.href = exportCanvas.toDataURL('image/png');
-            link.click();
-        });
-
-        function updateDebugPanel(scores, features) {
-            let html = `<h3>👾 即時得分</h3>`;
-            Object.values(CONFIG.monsters).forEach(m => {
-                const score = scores[m.id].toFixed(2);
-                html += `<div>${m.name}: ${score}</div>`;
-            });
-            html += `<hr><h3>🎭 特徵</h3>`;
-            html += `<div>張嘴 (jawOpen): ${(features['jawOpen']||0).toFixed(2)}</div>`;
-            html += `<div>歪頭 (Roll): ${features['_rollDegrees'].toFixed(1)}°</div>`;
-            html += `<div>面無表情: ${features['_neutralFace'].toFixed(2)}</div>`;
             debugPanel.innerHTML = html;
         }
 
-        // 頁面載入完成後執行 init
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
+        // 啟動程式
+        init();
     </script>
 </body>
 </html>
