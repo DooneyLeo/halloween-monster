@@ -10,7 +10,7 @@
             --text-color: #f0e6d2;
             --primary-color: #ff7300;
             --secondary-color: #8a2be2;
-            --card-bg: rgba(25, 15, 38, 0.9);
+            --card-bg: rgba(25, 15, 38, 0.95);
         }
         * { box-sizing: border-box; }
         body {
@@ -32,6 +32,7 @@
             font-size: 2.2rem;
         }
         
+        /* 置中主要舞台區 */
         #stage-container {
             width: 100%;
             max-width: 500px;
@@ -41,6 +42,7 @@
             gap: 20px;
         }
         
+        /* 步驟 1: 相機框框置中 */
         #cam-box {
             position: relative;
             width: 100%;
@@ -58,6 +60,7 @@
             transform: scaleX(-1); /* 鏡像 */
         }
 
+        /* 步驟 2: 掃描特效與倒數覆蓋層 */
         #scan-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -86,7 +89,7 @@
             100% { top: 95%; }
         }
         .scan-countdown {
-            font-size: 3.5rem;
+            font-size: 4rem;
             font-weight: bold;
             color: var(--primary-color);
             text-shadow: 0 0 20px #000;
@@ -106,6 +109,7 @@
             white-space: nowrap;
         }
 
+        /* 步驟 3: 結果卡片替代相機區 */
         #result-box {
             display: none;
             width: 100%;
@@ -117,7 +121,7 @@
             align-items: center;
             text-align: center;
             box-shadow: 0 0 30px rgba(255, 115, 0, 0.3);
-            animation: fadeIn 0.6s ease-out forwards;
+            animation: fadeIn 0.5s ease-out forwards;
         }
         #result-box.show {
             display: flex;
@@ -162,6 +166,7 @@
             line-height: 1.4;
         }
 
+        /* 通用按鈕樣式 */
         .btn {
             background: linear-gradient(135deg, var(--primary-color), #d05000);
             color: #fff;
@@ -233,11 +238,11 @@
     <div id="message-box"></div>
     
     <div id="stage-container">
-        <!-- 相機區 -->
+        <!-- 步驟 1: 相機畫面置中區 -->
         <div id="cam-box">
             <video id="webcam" autoplay playsinline></video>
             
-            <!-- 掃描特效與倒數 -->
+            <!-- 步驟 2: 掃描動畫覆蓋層 -->
             <div id="scan-overlay">
                 <div class="scan-line"></div>
                 <div class="scan-countdown" id="scan-countdown">3</div>
@@ -246,28 +251,29 @@
             <div id="status-text">相機初始化中...</div>
         </div>
 
-        <button id="scan-btn" class="btn" disabled>🔮 掃描我的內心怪獸</button>
+        <!-- 步驟 1: 置於相機下方的掃描按鈕 -->
+        <button id="scan-btn" class="btn" disabled>🔮 開始掃描萬聖怪獸</button>
 
-        <!-- 結果頁面 -->
+        <!-- 步驟 3: 結果卡片區（觸發後替換相機顯示） -->
         <div id="result-box">
             <div class="monster-image-container" id="monster-image-box"></div>
             
             <div class="monster-name" id="result-name">怪獸名稱</div>
-            <div class="monster-phrase" id="result-phrase">怪獸一句話台詞</div>
+            <div class="monster-phrase" id="result-phrase">怪獸台詞</div>
 
             <div class="button-group">
                 <button id="download-btn" class="btn">📸 下載怪獸結果卡片</button>
-                <button id="retry-btn" class="btn btn-secondary">🔄 重新掃描</button>
+                <!-- 步驟 4: 重置設施按鈕，叫回相機視窗 -->
+                <button id="reset-btn" class="btn btn-secondary">🔄 重置設施（下一位）</button>
             </div>
         </div>
     </div>
 
+    <!-- 用於合成下載卡片的隱藏 Canvas -->
     <canvas id="export-canvas" style="display:none;"></canvas>
 
     <script>
-        // ==========================================
-        // 🎃 怪獸資料庫（後續可自行替換 imageUrl 的網址）
-        // ==========================================
+        // 怪獸資料庫（圖片預設讀取同目錄下的圖片檔）
         const MONSTERS = [
             { 
                 id: 'werewolf', 
@@ -314,11 +320,11 @@
         const scanCountdownEl = document.getElementById("scan-countdown");
         const statusText = document.getElementById("status-text");
         const resultBox = document.getElementById("result-box");
-        const retryBtn = document.getElementById("retry-btn");
+        const resetBtn = document.getElementById("reset-btn");
         const downloadBtn = document.getElementById("download-btn");
         const messageBox = document.getElementById("message-box");
 
-        // 啟動相機
+        // 【步驟 1】開啟相機並使掃描按鈕可用
         async function initCamera() {
             try {
                 statusText.innerText = "請求相機權限中... 📷";
@@ -326,18 +332,18 @@
                 video.srcObject = stream;
                 
                 video.addEventListener("loadeddata", () => {
-                    statusText.innerText = "準備就緒！請按下方按鈕開始掃描 🎃";
+                    statusText.innerText = "相機就緒，請點擊下方按鈕";
                     scanBtn.disabled = false;
                 });
             } catch (error) {
                 console.error("相機開啟失敗:", error);
-                messageBox.innerHTML = "無法開啟相機。<br>請確認裝置擁有相機並已允許網頁存取。";
+                messageBox.innerHTML = "無法開啟相機。<br>請確認裝置擁有相機並允許存取。";
                 messageBox.style.display = "block";
                 statusText.innerText = "相機開啟失敗";
             }
         }
 
-        // 開始模擬掃描流程
+        // 【步驟 2】點擊掃描按鈕觸發 3 秒雷射倒數動畫
         scanBtn.addEventListener("click", () => {
             if (isScanning) return;
             
@@ -361,19 +367,19 @@
             }, 1000);
         });
 
-        // 掃描完成：拍照並隨機抽卡
+        // 【步驟 3】掃描完成：擷取照片，隨機選怪獸並隱藏相機框顯示結果 UI
         function finishScan() {
             isScanning = false;
             scanOverlay.classList.remove('active');
 
-            // 1. 抓取當下相機快照
+            // 擷取當前鏡頭照片作為下載卡片背景
             captureSnapshot();
 
-            // 2. 隨機抽取一隻怪獸
+            // 隨機抽選怪獸
             const randomIndex = Math.floor(Math.random() * MONSTERS.length);
             finalMonsterResult = MONSTERS[randomIndex];
 
-            // 3. 切換顯示結果頁
+            // 隱藏相機框與按鈕，顯示結果頁
             camBox.style.display = 'none';
             showResultCard(finalMonsterResult);
         }
@@ -389,13 +395,12 @@
             capturedPhotoCanvas = canvas;
         }
 
-        // 顯示結果卡片（支援圖片與自動降級 Emoji 備援）
         function showResultCard(monster) {
             const imageBox = document.getElementById('monster-image-box');
             imageBox.style.borderColor = monster.bgColor || 'var(--primary-color)';
 
             if (monster.imageUrl && monster.imageUrl.trim() !== '') {
-                // onerror：若圖片載入失敗，會自動切換為 Emoji，絕不破圖
+                // 如果圖片連結失效或破圖，自動降級顯示 Emoji
                 imageBox.innerHTML = `
                     <img src="${monster.imageUrl}" 
                          class="monster-large-img" 
@@ -412,15 +417,16 @@
             resultBox.classList.add('show');
         }
 
-        retryBtn.addEventListener("click", () => {
+        // 【步驟 4】重置設施：隱藏結果，恢復相機框框，供下一位體驗
+        resetBtn.addEventListener("click", () => {
             resultBox.classList.remove('show');
             camBox.style.display = 'block';
             scanBtn.style.display = 'inline-flex';
             scanBtn.disabled = false;
-            statusText.innerText = "準備就緒！請按下方按鈕開始掃描 🎃";
+            statusText.innerText = "相機就緒，請點擊下方按鈕";
         });
 
-        // 合成下載卡片
+        // 合成圖片與下載功能
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -476,7 +482,7 @@
             link.click();
         });
 
-        // 啟動相機
+        // 啟動相機控制
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initCamera);
         } else {
