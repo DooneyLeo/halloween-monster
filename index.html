@@ -390,6 +390,7 @@
             { 
                 id: 'werewolf', 
                 name: '狂暴狼人', 
+                emoji: '🐺', 
                 bgColor: '#4b3621', 
                 imageUrl: './frank.jpg', 
                 phrase: '「嗷嗚～今晚是滿月嗎？小心別惹我！」' 
@@ -397,6 +398,7 @@
             { 
                 id: 'zombie', 
                 name: '茫然殭屍', 
+                emoji: '🧟', 
                 bgColor: '#3a3b2a', 
                 imageUrl: './frank.jpg', 
                 phrase: '「腦袋...我要吃腦袋...或是珍珠奶茶...」' 
@@ -404,6 +406,7 @@
             { 
                 id: 'vampire', 
                 name: '高雅吸血鬼', 
+                emoji: '🧛', 
                 bgColor: '#4a0e17', 
                 imageUrl: './frank.jpg', 
                 phrase: '「今夜的月色真美，要來一杯新鮮番茄汁嗎？」' 
@@ -411,6 +414,7 @@
             { 
                 id: 'frankenstein', 
                 name: '科學怪人', 
+                emoji: '🧟‍♂️', 
                 bgColor: '#1a3320', 
                 imageUrl: './frank.jpg', 
                 phrase: '「雷電...賜予我力量！我只是頭有點歪而已。」' 
@@ -522,7 +526,7 @@
             }, 1200);
         }
 
-        // 填入直式卡片資料
+        // 填入直式卡片資料（純文字名稱，不搭配 Emoji）
         function showResultCard(monster, userName) {
             const imageBox = document.getElementById('monster-image-box');
             imageBox.style.borderColor = monster.bgColor || 'var(--primary-color)';
@@ -532,14 +536,14 @@
                     <img src="${monster.imageUrl}" 
                          class="monster-large-img" 
                          alt="${monster.name}" 
-                         onerror="this.onerror=null; this.outerHTML='<div class=\\'monster-large-emoji\\'>${monster.emoji}</div>';">
+                         onerror="this.onerror=null; this.outerHTML='<div class=\\'monster-large-emoji\\'>🎃</div>';">
                 `;
             } else {
-                imageBox.innerHTML = `<div class="monster-large-emoji">${monster.emoji}</div>`;
+                imageBox.innerHTML = `<div class="monster-large-emoji">🎃</div>`;
             }
 
             document.getElementById('res-user-name').innerText = userName;
-            document.getElementById('res-monster-name').innerText = `${monster.emoji} ${monster.name}`;
+            document.getElementById('res-monster-name').innerText = monster.name; // 僅顯示怪獸名稱
             document.getElementById('res-monster-desc').innerText = monster.phrase;
         }
 
@@ -557,7 +561,7 @@
             updateScanBtnState();
         });
 
-        // 合成直式卡片並下載圖檔
+        // 合成直式卡片並下載圖檔（純文字名稱，不搭配 Emoji）
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -591,7 +595,7 @@
                 ctx.fillRect(50, 90, 500, 500);
                 ctx.fillStyle = "#ffffff";
                 ctx.font = "100px sans-serif";
-                ctx.fillText(finalMonsterResult.emoji, 300, 370);
+                ctx.fillText("🎃", 300, 370);
             }
             ctx.strokeStyle = "#8a2be2";
             ctx.lineWidth = 4;
@@ -608,13 +612,13 @@
             ctx.font = "26px sans-serif";
             ctx.fillText(currentUserName, 150, 630);
 
-            // 內心怪獸
+            // 內心怪獸（純名稱）
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 26px sans-serif";
             ctx.fillText("內心怪獸：", 50, 680);
             ctx.fillStyle = "#ff9d00";
             ctx.font = "bold 28px sans-serif";
-            ctx.fillText(`{finalMonsterResult.name}`, 190, 680);
+            ctx.fillText(finalMonsterResult.name, 190, 680); // 僅繪製怪獸名稱
 
             // 簡介
             ctx.fillStyle = "#ff7300";
@@ -623,7 +627,7 @@
             ctx.fillStyle = "#f0e6d2";
             ctx.font = "italic 22px sans-serif";
             
-            // 簡介文字換行處理
+            // 簡介文字
             const phrase = finalMonsterResult.phrase;
             ctx.fillText(phrase, 50, 770);
 
