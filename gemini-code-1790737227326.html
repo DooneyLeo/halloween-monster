@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你的內心怪獸 🎃</title>
+    <style>
+        :root {
+            --bg-color: #0d0014;
+            --text-color: #f0e6d2;
+            --primary-color: #ff7300;
+            --secondary-color: #8a2be2;
+            --card-bg: rgba(25, 15, 38, 0.9);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 20px 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-shadow: 0 0 10px rgba(255, 115, 0, 0.5);
+            margin: 0 0 20px 0;
+            text-align: center;
+            font-size: 2.2rem;
+        }
+        
+        /* 中央主要容器 */
+        #stage-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        /* 鏡像相機區 */
+        #cam-box {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border: 3px solid var(--secondary-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(138, 43, 226, 0.4);
+            transition: all 0.5s ease;
+        }
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* 鏡像 */
+        }
+
+        /* 掃描動畫覆蓋層 */
+        #scan-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        #scan-overlay.active {
+            display: flex;
+        }
+        /* 雷射掃描線 */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), #fff, var(--primary-color), transparent);
+            box-shadow: 0 0 15px var(--primary-color);
+            animation: scanMove 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes scanMove {
+            0% { top: 5%; }
+            100% { top: 95%; }
+        }
+        .scan-countdown {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-shadow: 0 0 20px #000;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        /* 狀態提示字 */
+        #status-text {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+
+        /* 結果展示頁（掃描完成後顯示） */
+        #result-box {
+            display: none;
+            width: 100%;
+            background: var(--card-bg);
+            border: 3px solid var(--primary-color);
+            border-radius: 16px;
+            padding: 20px;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 115, 0, 0.3);
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        #result-box.show {
+            display: flex;
+        }
+
+        /* 大圖呈現區 */
+        .monster-image-container {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 4/3;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 15px rgba(255, 115, 0, 0.2);
+            overflow: hidden;
+            background: #111;
+        }
+        .monster-large-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .monster-large-emoji {
+            font-size: 120px;
+            line-height: 1;
+        }
+
+        /* 按鈕風格 */
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color), #d05000);
+            color: #fff;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 115, 0, 0.4);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 115, 0, 0.6);
+        }
+        .btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color), #5a189a);
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            align-items: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        #message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 51, 51, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+            text-align: center;
+        }
+        
+        /* 除錯面板 */
+        #debug-panel {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: 280px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 15px;
+            overflow-y: auto;
+            z-index: 50;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>你的內心怪獸 🎃</h1>
+    <div id="message-box"></div>
+    
+    <div id="stage-container">
+        <!-- 相機區 -->
+        <div id="cam-box">
+            <video id="webcam" autoplay playsinline></video>
+            
+            <!-- 掃描特效與倒數 -->
+            <div id="scan-overlay">
+                <div class="scan-line"></div>
+                <div class="scan-countdown" id="scan-countdown">3</div>
+            </div>
+            
+            <div id="status-text">相機初始化中...</div>
+        </div>
+
+        <!-- 偵測按鈕（初始狀態） -->
+        <button id="scan-btn" class="btn" disabled>🔮 掃描我的內心怪獸</button>
+
+        <!-- 結果頁面（掃描完成後替代相機出現） -->
+        <div id="result-box">
+            <div class="monster-image-container" id="monster-image-box">
+                <!-- 動態填入大圖片或 Emoji -->
+            </div>
+
+            <div class="button-group">
+                <button id="download-btn" class="btn">📸 下載怪獸結果卡片</button>
+                <button id="retry-btn" class="btn btn-secondary">🔄 重新掃描</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用於合成下載卡片的隱藏 Canvas -->
+    <canvas id="export-canvas" style="display:none;"></canvas>
+
+    <div id="debug-panel"></div>
+
+    <!-- 使用全域相容的 JS Bundle 替代原本的 Module Import，確保 file:// 能直接雙擊執行 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.js" crossorigin="anonymous"></script>
+
+    <script>
+        // 從全域 tasksVision 物件取出類別
+        const { FaceLandmarker, FilesetResolver } = tasksVision;
+
+        // ==========================================
+        // 【測試用 Base64 圖片】
+        // 未來可將此處替換為您自己的真實怪獸 Base64 字串
+        // ==========================================
+        const TEST_BASE64_IMAGE = 'data:image/jpeg;base64,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tjF2i3p4j9x2t+A8fG+p2eJmne/wCmnS474X2v4iX25N4u4f3U3uHByB37Hftv893a74u25eEotz/34a7479sUf/E38O++a9qLrtfEpr/bLqM/v9tI4y/j/pE5e7300Wd/uNf4/c/l8GbeBf02aU+U50mAtv/wA2143qgtxXng/m5f23+a72+Ld2/a3e14q9/i/m22a00/xXbvRfa93Lz33K295eB+/+s/1X/YvOat2M4Bf25+0sD4LqO9G6f4E3XijvQftIu0S44u3SbrI1R4uO69h48aM/0vE96q21tT84C/3XwN3qL42N6Sztm67+S9L/E8mXUvA40Uec3YmNu58mAnjS0/dM3RfeipO4fPjCq4kbr/Asy32s3E1S1C71V7uUprwO6kE2rIe44OaK34Mv3G0Xmro9r85XThhN4pTq3aTo34IilN83sP4b3/mS4534/7X/b5qgN/Hj34G5u3f938u3f99e3a6sL+5v938O2/bx4O/e2/5fL5vv35fb3324/X+/v2f/ANft/f39+38f++2v8eP3e2++/wAnu/v8/f8A/EACURAQAABQQCAgMBAAAAAAAAAAEAIDEQITEwQEEyUWFxgZGx4f/aAAgBAwEBPwBy7Xp1yIq14O9Y/B8fM7/2sA2R+vD4+P3LAt3a8vD9P+VgC82/D348fn/I32338ffk4f4e/N30f2f/aAAgBAQEABBQI5p/rX33sMv8AW79r/J1Pfe4C3+a53m0/0/m6/wBxv+/f3P53X4/A7/h8N75m/E/8j5v+5eH7O8eSvn63f91n/A6G195x/yG/S11E/e8q1S/G+fI2+1k33/AH/A4G0E3+G10m12/U/XG/0P0z5O6/3d2X49xvf8XG1m233m13/AH8LfbS63+3fS3/1s23jbf8A14Xm1q3S89rL8O/4/T2eF0/o3/Gf1O74qX644/m8fx4f434238L8eP29v33x3ePh/j4G11m3335D2GfP2v1/s++pE48Tf0+5s3b4/rjbze41f4fA15L6f7u/9j3x/i3q66X/A8m8a377+G13E+G/pX6ePnf1eI3D4+14e8/G95v31f1p4a/w/X/b0d738f6H6fU+/0fxN4F/5Xj+HwX1x/t9m+3q73x3D4/v6vIe/1d/a/j/D1x3d7XN/T/wBX+N/A4e83+W++P7a/5G9p5P8Aze34XN9rXv439Hh9fX/E38O4v4fIe1xGfIegfJ0vP/I3j+2919T4fg4X3m3i93836d5P8v28Hk/xvd18r4+p++p++t29/Pze4X937f223/I+fS43p43G2f15/0s/f8A/bH8vj383aX0d2v9rf5vG4G9t7/i16/g8W0S+O1kX3238XwXp73j/Afxvd95x/r3/E/t6W9X+I1/A1j/A4+Xp+Xp3/C/m34a9f3vvfXg/2x2vv/AHP0v/38rf3/ALf29L+7s3m429/f+d94/v8ANxGv/P1f3G99p42+/jX/AH8Lf18jP34fR6X/AOR183+1+e783/3wXf8Ae+/a3iN4XG29rf3f858vW99rfb/bU4S0S9ve3f8Atfe8vjvv7eBv4vHl+e198X7632t+Xf13f+e2d3G91q3P5fe+b/5/l6GfP5m29ve3fe78vj9974mX/m538X/0p793838D3/d6f3sfe91q/u2fL3u3j/d3/S1E/m5q3/Nrf1fe+16f73vHl5+5v+/8e/v8vS2Xre+eN1e/v/X+f4G434n4vH0v4vvfXvv5ffHjfe93d3vfwePnS/a8/v3/ANe3tN99fe8dve/Hvf4fL9tX3m+eXz833d7S2/3v5G38e1feee1ve/u8r/d+20e54/mN718vXvv+b/N+32vv5eXv3m+/zeP4F/mfe8ef3tX08ffvD4G91X5+XvfN8fL+9+98ve8ee/1393G/0u+96f0O34Xvfx2v9/31q/xN/A36fe+1uG26/ze91vf18vvb4fO/y++28XreXj3v5e3fe9p/ve3m7vfXy7s/X/fU2p203O/m0AtvfA24veAnAtpAtve+/m/S/399/1e17wXvAtx2++vEtvvXxe8S72/S4/i1v30/Xf12tve/y5L8L/p24W73dxe/f9rLd6XN+ngbeT/s8At3vAtvLwvfS9LjeaAtvfe8vf093A04At3oXxe/zeAtfe/neA933099fe6m5Xf3P53Xv7e34vft4e/p4bX4P29te1re1v4vbxXp3X0+nhfe28fveLAt/S+/xePhvdS+/pffve/xe3d0vd9/m3i9e/m00tvve7Atx2vfS2+633+32/Dtb39r3bA/a71v313S++3f4fO+/f4e7p9vf4f3u9/m19/vd7X8Pq0tvfeX3t5O17eA391fe21f3vf97+G13O/S34e9/D8ve1/m/ze316eX313/f2v247fO387t1X0v30uPv+ftv4vvfvx/O98C4+/X/m6W3r/AtvxeH1d3dtrAt3tbv/N2tvdfe++/a2u3S4vS/fAtvvpvdve++/e3m6+3e4m8b49ve3fO/m4/Atvv/AAnI21sAtA3j/wCb8Atfe1f14++sAtI+/ve8S8e1+n6X9vAtvdre/At5u13N/eAt4/At4e5v At clear intervals, making the standard error of the mean less than 2-4%. The measured currents are scaled by the gain factors shown in Figure 2.
