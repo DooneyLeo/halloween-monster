@@ -344,7 +344,7 @@
 
         <!-- 名字輸入欄位 -->
         <div class="input-group" id="input-group">
-            <label for="user-name-input">✍️ 請先輸入你的名字：</label>
+            <label for="user-name-input">✍️ 輸入怪獸宿主是誰：</label>
             <input type="text" id="user-name-input" placeholder="例如：小明" maxlength="15" autocomplete="off">
         </div>
 
@@ -361,7 +361,7 @@
                 <!-- 卡片文字資訊 -->
                 <div class="card-info-list">
                     <div class="card-info-row">
-                        <strong>名字：</strong><span id="res-user-name" class="highlight-name"></span>
+                        <strong>怪獸宿主：</strong><span id="res-user-name" class="highlight-name"></span>
                     </div>
                     <div class="card-info-row">
                         <strong>內心怪獸：</strong><span id="res-monster-name" class="highlight-monster"></span>
@@ -389,31 +389,31 @@
         const MONSTERS = [
             { 
                 id: 'werewolf', 
-                name: '嗷嗚狼人', 
+                name: '綠毛狼人', 
                 bgColor: '#4b3621', 
-                imageUrl: './werewolf.jpg', 
+                imageUrl: './wolf.jpg', 
                 phrase: '「嗷嗚～今晚是滿月嗎？小心別惹我！」' 
             },
             { 
-                id: 'zombie', 
-                name: '茫然殭屍', 
+                id: 'frank', 
+                name: '科學綠人', 
                 bgColor: '#3a3b2a', 
                 imageUrl: './frank.jpg', 
                 phrase: '「腦袋...我要吃腦袋...或是珍珠奶茶...」' 
             },
             { 
                 id: 'vampire', 
-                name: '高雅吸血鬼', 
+                name: '吸血綠人', 
                 bgColor: '#4a0e17', 
                 imageUrl: './vampire.jpg', 
-                phrase: '「今夜的月色真美，要來一杯新鮮番茄汁嗎？」' 
+                phrase: '「不吸血，只靠冰美式或拿鐵續命。」' 
             },
             { 
-                id: 'frankenstein', 
-                name: '科學怪人', 
+                id: 'ghost', 
+                name: '驚嚇綠人', 
                 bgColor: '#1a3320', 
-                imageUrl: './frank.jpg', 
-                phrase: '「雷電...賜予我力量！我只是頭有點歪而已。」' 
+                imageUrl: './ghost.jpg', 
+                phrase: '「你看不到我...你看不到我...」' 
             },
              { 
                 id: 'pumpkin', 
@@ -421,6 +421,20 @@
                 bgColor: '#1a3320', 
                 imageUrl: './pumpkin.jpg', 
                 phrase: '「南瓜對身體很好，不要討厭我。」' 
+            },
+             { 
+                id: 'wizard', 
+                name: '魔法綠人', 
+                bgColor: '#1a3320', 
+                imageUrl: './wizard.jpg', 
+                phrase: '「登愣，我要把星期一變不見。」' 
+            },
+             { 
+                id: 'mummy', 
+                name: '繃帶綠人', 
+                bgColor: '#1a3320', 
+                imageUrl: './mummy.jpg', 
+                phrase: '「不要蓋住鼻子，我有過敏。」' 
             }
         ];
 
@@ -452,7 +466,7 @@
                 statusText.innerText = "準備就緒，點擊下方按鈕開始！";
             } else if (isCameraReady && !hasName) {
                 scanBtn.disabled = true;
-                statusText.innerText = "請先輸入名字再開始掃描 ✍️";
+                statusText.innerText = "請先輸入怪獸宿主內容再開始掃描 ✍️";
             }
         }
 
