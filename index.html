@@ -15,7 +15,7 @@
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 20px 10px;
+            padding: 12px 10px;
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -23,31 +23,31 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
         h1 {
             color: var(--primary-color);
             text-shadow: 0 0 12px rgba(255, 115, 0, 0.6);
-            margin: 0 0 15px 0;
+            margin: 0 0 10px 0;
             text-align: center;
-            font-size: 2.2rem;
+            font-size: 1.6rem;
         }
         
-        /* 舞台區開啟 3D 視角 */
         #stage-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             perspective: 1000px;
         }
         
-        /* 相機畫面區 */
+        /* 相機畫面區：佔比約 78~80% 視窗高度 */
         #cam-box {
             position: relative;
             width: 100%;
-            height: 78vh;
+            height: 76vh;
             background: #000;
             border: 3px solid var(--secondary-color);
             border-radius: 18px;
@@ -58,10 +58,9 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* 鏡像 */
+            transform: scaleX(-1);
         }
 
-        /* 掃描動畫覆蓋層 */
         #scan-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -102,43 +101,74 @@
             bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             padding: 6px 16px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--primary-color);
             white-space: nowrap;
         }
 
-        /* 名字輸入欄位樣式 */
+        /* 下方控制區：輸入框與按鈕水平並列 */
         .controls-row {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
-}
-#user-name-input {
-    flex: 1;
-    min-width: 0;
-    padding: 12px 16px;
-    border-radius: 25px;
-    border: 2px solid var(--secondary-color);
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-    font-size: 1rem;
-    text-align: center;
-    outline: none;
-    transition: all 0.3s ease;
-}
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #user-name-input {
+            flex: 1;
+            min-width: 0;
+            padding: 12px 16px;
+            border-radius: 25px;
+            border: 2px solid var(--secondary-color);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
         #user-name-input:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 12px rgba(255, 115, 0, 0.5);
             background: rgba(255, 255, 255, 0.15);
         }
 
-        /* 結果容器 */
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color), #d05000);
+            color: #fff;
+            border: none;
+            padding: 12px 18px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 115, 0, 0.4);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 115, 0, 0.6);
+        }
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color), #5a189a);
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+        }
+
         #result-box {
             display: none;
             width: 100%;
@@ -149,7 +179,6 @@
             display: flex;
         }
 
-        /* 直式合成卡片主體 */
         .monster-card {
             width: 100%;
             background: var(--card-bg);
@@ -166,7 +195,6 @@
             overflow: hidden;
         }
 
-        /* 3D 彈跳翻牌動畫 */
         .monster-card.animate-pop-flip {
             animation: cardPopFlip 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
@@ -189,7 +217,6 @@
             }
         }
 
-        /* 1:1 正方形圖片區 */
         .monster-image-container {
             width: 100%;
             aspect-ratio: 1/1;
@@ -197,7 +224,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             border: 2px solid var(--secondary-color);
             overflow: hidden;
             background: #000;
@@ -208,22 +235,21 @@
             object-fit: cover;
         }
         .monster-large-emoji {
-            font-size: 110px;
+            font-size: 100px;
             line-height: 1;
         }
 
-        /* 卡片文字資訊排版 */
         .card-info-list {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             text-align: left;
         }
         .card-info-row {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             color: #ddd;
-            line-height: 1.5;
+            line-height: 1.4;
             word-break: break-word;
         }
         .card-info-row strong {
@@ -232,12 +258,12 @@
         .highlight-name {
             color: #fff;
             font-weight: bold;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
         }
         .highlight-monster {
             color: #ff9d00;
             font-weight: bold;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
         }
         .desc-text {
             font-style: italic;
@@ -247,14 +273,13 @@
             border-left: 3px solid var(--secondary-color);
         }
 
-        /* 按鈕容器（延遲出現） */
         .button-group {
             display: flex;
             flex-direction: column;
             gap: 12px;
             width: 100%;
             align-items: center;
-            margin-top: 20px;
+            margin-top: 18px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.6s ease;
@@ -262,39 +287,6 @@
         .button-group.show {
             opacity: 1;
             pointer-events: auto;
-        }
-
-        /* 按鈕樣式 */
-        .btn {
-    background: linear-gradient(135deg, var(--primary-color), #d05000);
-    color: #fff;
-    border: none;
-    padding: 12px 18px; /* 微調內距以利並排 */
-    font-size: 1rem;
-    font-weight: bold;
-    border-radius: 30px;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(255, 115, 0, 0.4);
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap; /* 👈 防止按鈕文字斷行 */
-    flex-shrink: 0;       /* 👈 防止按鈕被輸入框壓縮 */
-}
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 115, 0, 0.6);
-        }
-        .btn:disabled {
-            background: #555;
-            cursor: not-allowed;
-            opacity: 0.5;
-            box-shadow: none;
-        }
-        .btn-secondary {
-            background: linear-gradient(135deg, var(--secondary-color), #5a189a);
-            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
         }
 
         @keyframes pulse {
@@ -308,7 +300,7 @@
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255, 51, 51, 0.9);
-            padding: 15px 30px;
+            padding: 12px 24px;
             border-radius: 10px;
             color: white;
             font-weight: bold;
@@ -324,11 +316,9 @@
     <div id="message-box"></div>
     
     <div id="stage-container">
-        <!-- 相機畫面置中區 -->
         <div id="cam-box">
-            <video id="webcam" autoplay playsinline></video>
+            <video id="webcam" autoplay playsinline muted></video>
             
-            <!-- 掃描特效與倒數 -->
             <div id="scan-overlay">
                 <div class="scan-line"></div>
                 <div class="scan-countdown" id="scan-countdown">3</div>
@@ -337,23 +327,15 @@
             <div id="status-text">相機初始化中...</div>
         </div>
 
-        <!-- 名字輸入欄位 -->
-<div class="input-group" id="input-group">
-    <label for="user-name-input">✍️ 輸入怪獸宿主是誰：</label>
-    <input type="text" id="user-name-input" placeholder="例如：小明" maxlength="15" autocomplete="off">
-</div>
+        <div class="controls-row" id="controls-row">
+            <input type="text" id="user-name-input" placeholder="✍️ 輸入怪獸宿主名字" maxlength="15" autocomplete="off">
+            <button id="scan-btn" class="btn" disabled>🔮 開始掃描</button>
+        </div>
 
-<!-- 掃描觸發按鈕（需輸入名字才可點擊） -->
-<button id="scan-btn" class="btn" disabled>🔮 開始掃描萬聖怪獸</button>
-
-        <!-- 結果頁面：直式合成卡片與延遲浮現按鈕 -->
         <div id="result-box">
-            <!-- 翻牌卡片主體 -->
             <div class="monster-card" id="monster-card">
-                <!-- 1:1 正方形怪獸圖片 -->
                 <div class="monster-image-container" id="monster-image-box"></div>
                 
-                <!-- 卡片文字資訊 -->
                 <div class="card-info-list">
                     <div class="card-info-row">
                         <strong>怪獸宿主：</strong><span id="res-user-name" class="highlight-name"></span>
@@ -368,19 +350,16 @@
                 </div>
             </div>
 
-            <!-- 動畫完結後顯示的控制按鈕 -->
             <div class="button-group" id="button-group">
-                <button id="download-btn" class="btn">📸 下載怪獸結果卡片</button>
-                <button id="reset-btn" class="btn btn-secondary">🔄 重置設施（下一位）</button>
+                <button id="download-btn" class="btn" style="width: 100%; max-width: 320px;">📸 下載怪獸結果卡片</button>
+                <button id="reset-btn" class="btn btn-secondary" style="width: 100%; max-width: 320px;">🔄 重置設施（下一位）</button>
             </div>
         </div>
     </div>
 
-    <!-- 用於合成下載卡片的隱藏 Canvas -->
     <canvas id="export-canvas" style="display:none;"></canvas>
 
     <script>
-        // 怪獸資料庫（讀取同目錄下的圖片檔）
         const MONSTERS = [
             { 
                 id: 'werewolf', 
@@ -410,21 +389,21 @@
                 imageUrl: './ghost.jpg', 
                 phrase: '「你看不到我...你看不到我...」' 
             },
-             { 
+            { 
                 id: 'pumpkin', 
                 name: '萬聖南瓜王', 
                 bgColor: '#1a3320', 
                 imageUrl: './pumpkin.jpg', 
                 phrase: '「南瓜對身體很好，不要討厭我。」' 
             },
-             { 
+            { 
                 id: 'wizard', 
                 name: '魔法綠人', 
                 bgColor: '#1a3320', 
                 imageUrl: './wizard.jpg', 
                 phrase: '「登愣，我要把星期一變不見。」' 
             },
-             { 
+            { 
                 id: 'mummy', 
                 name: '繃帶綠人', 
                 bgColor: '#1a3320', 
@@ -453,48 +432,49 @@
         const downloadBtn = document.getElementById("download-btn");
         const messageBox = document.getElementById("message-box");
 
-        // 檢查按鈕啟用條件（相機就緒 + 已輸入名字）
         function updateScanBtnState() {
             const hasName = userNameInput.value.trim().length > 0;
             if (isCameraReady && hasName && !isScanning) {
                 scanBtn.disabled = false;
-                statusText.innerText = "準備就緒，點擊下方按鈕開始！";
+                statusText.innerText = "準備就緒，點擊右方按鈕！";
             } else if (isCameraReady && !hasName) {
                 scanBtn.disabled = true;
-                statusText.innerText = "請先輸入怪獸宿主內容再開始掃描 ✍️";
+                statusText.innerText = "請輸入名字後開始掃描 ✍️";
             }
         }
 
-        // 監聽名字輸入事件
         userNameInput.addEventListener("input", updateScanBtnState);
 
-        // 啟動相機
+        // 修復：完整的相機初始化與備援邏輯
         async function initCamera() {
             try {
                 statusText.innerText = "請求相機權限中... 📷";
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                video.srcObject = stream;
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                } catch (err) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                }
                 
-                video.addEventListener("loadeddata", () => {
-                    isCameraReady = true;
-                    updateScanBtnState();
-                });
+                video.srcObject = stream;
+                await video.play();
+
+                isCameraReady = true;
+                updateScanBtnState();
             } catch (error) {
                 console.error("相機開啟失敗:", error);
-                messageBox.innerHTML = "無法開啟相機。<br>請確認裝置擁有相機並允許存取。";
+                messageBox.innerHTML = "無法開啟相機。<br>請確認瀏覽器支援相機並已允許授權。";
                 messageBox.style.display = "block";
                 statusText.innerText = "相機開啟失敗";
             }
         }
 
-        // 點擊掃描：開啟 3 秒雷射倒數
         scanBtn.addEventListener("click", () => {
             currentUserName = userNameInput.value.trim();
             if (!currentUserName || isScanning || !isCameraReady) return;
             
             isScanning = true;
-            scanBtn.disabled = true;
-            controlsRow.style.display = 'none'; // 👈 直接隱藏一整排並列區域
+            controlsRow.style.display = 'none';
             statusText.innerText = "正在分析你的內心怪獸...";
             scanOverlay.classList.add('active');
 
@@ -512,32 +492,25 @@
             }, 1000);
         });
 
-        // 掃描完成：隱藏相機，卡片 3D 翻轉彈出
         function finishScan() {
             isScanning = false;
             scanOverlay.classList.remove('active');
 
-            // 隨機抽選怪獸
             const randomIndex = Math.floor(Math.random() * MONSTERS.length);
             finalMonsterResult = MONSTERS[randomIndex];
 
-            // 1. 隱藏相機框
             camBox.style.display = 'none';
 
-            // 2. 載入卡片資訊
             showResultCard(finalMonsterResult, currentUserName);
 
-            // 3. 顯示結果區並觸發 3D 彈跳翻轉動畫
             resultBox.classList.add('show');
             monsterCard.classList.add('animate-pop-flip');
 
-            // 4. 動畫播放完畢後（1.2 秒），淡入顯示按鈕
             setTimeout(() => {
                 buttonGroup.classList.add('show');
             }, 1200);
         }
 
-        // 填入直式卡片資料（純文字名稱，不組合任何 Emoji）
         function showResultCard(monster, userName) {
             const imageBox = document.getElementById('monster-image-box');
             imageBox.style.borderColor = monster.bgColor || 'var(--primary-color)';
@@ -558,20 +531,18 @@
             document.getElementById('res-monster-desc').innerText = monster.phrase;
         }
 
-        // 重置設施：清空輸入，叫回相機框，供下一位體驗
         resetBtn.addEventListener("click", () => {
             monsterCard.classList.remove('animate-pop-flip');
             buttonGroup.classList.remove('show');
             resultBox.classList.remove('show');
 
             userNameInput.value = '';
-            controlsRow.style.display = 'flex'; // 👈 重新顯示並列區域
+            controlsRow.style.display = 'flex';
             camBox.style.display = 'block';
             
             updateScanBtnState();
         });
 
-        // 合成直式卡片並下載圖檔（純文字名稱，不組合任何 Emoji）
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -581,22 +552,18 @@
             exportCanvas.width = 600;
             exportCanvas.height = 900;
 
-            // 背景底色
             ctx.fillStyle = "#190f26";
             ctx.fillRect(0, 0, 600, 900);
 
-            // 卡片橘色邊框
             ctx.strokeStyle = "#ff7300";
             ctx.lineWidth = 10;
             ctx.strokeRect(15, 15, 570, 870);
 
-            // 頂部標題
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 34px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("🎃 萬聖節內心怪獸卡 🎃", 300, 65);
 
-            // 繪製正方形怪獸圖片區域
             const imgContainer = document.querySelector('#monster-image-box img');
             if (imgContainer && imgContainer.complete) {
                 ctx.drawImage(imgContainer, 50, 90, 500, 500);
@@ -611,50 +578,40 @@
             ctx.lineWidth = 4;
             ctx.strokeRect(50, 90, 500, 500);
 
-            // 繪製文字區域（左對齊）
             ctx.textAlign = "left";
             
-            // 名字
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 26px sans-serif";
-            ctx.fillText("名字：", 50, 630);
+            ctx.fillText("怪獸宿主：", 50, 630);
             ctx.fillStyle = "#ffffff";
             ctx.font = "26px sans-serif";
-            ctx.fillText(currentUserName, 150, 630);
+            ctx.fillText(currentUserName, 200, 630);
 
-            // 內心怪獸（純名稱）
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 26px sans-serif";
             ctx.fillText("內心怪獸：", 50, 680);
             ctx.fillStyle = "#ff9d00";
             ctx.font = "bold 28px sans-serif";
-            ctx.fillText(finalMonsterResult.name, 190, 680);
+            ctx.fillText(finalMonsterResult.name, 200, 680);
 
-            // 簡介
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 26px sans-serif";
             ctx.fillText("怪獸簡介：", 50, 730);
             ctx.fillStyle = "#f0e6d2";
             ctx.font = "italic 22px sans-serif";
-            
-            // 簡介文字
-            const phrase = finalMonsterResult.phrase;
-            ctx.fillText(phrase, 50, 770);
+            ctx.fillText(finalMonsterResult.phrase, 50, 770);
 
-            // 底部宣傳字
             ctx.fillStyle = "#8a2be2";
             ctx.font = "18px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("萬聖節特別企劃 — 內心怪獸測驗", 300, 850);
 
-            // 下載 PNG 圖檔
             const link = document.createElement('a');
             link.download = `${currentUserName}-內心怪獸-${finalMonsterResult.name}.png`;
             link.href = exportCanvas.toDataURL('image/png');
             link.click();
         });
 
-        // 初始化相機
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initCamera);
         } else {
