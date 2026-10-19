@@ -851,8 +851,8 @@
             updateScanBtnState();
         });
 
-        // 選擇下載卡片：導出包含純數字「嚇人指數」的 PNG
-        downloadBtn.addEventListener("click", async () => {
+        // 📸 下載按鈕：電腦端直接下載檔案，手機端（iPhone / Android）呼叫原生相簿儲存
+downloadBtn.addEventListener("click", () => {
     if (!finalMonsterResult) return;
 
     const exportCanvas = document.getElementById('export-canvas');
@@ -861,7 +861,7 @@
     exportCanvas.width = 600;
     exportCanvas.height = 920;
 
-    // 1. 繪製卡片底色與內容
+    // 1. 繪製卡片底色與外框
     ctx.fillStyle = "#190f26";
     ctx.fillRect(0, 0, 600, 920);
 
@@ -869,6 +869,7 @@
     ctx.lineWidth = 10;
     ctx.strokeRect(15, 15, 570, 890);
 
+    // 2. 繪製文字與圖片
     ctx.fillStyle = "#ff7300";
     ctx.font = "bold 34px sans-serif";
     ctx.textAlign = "center";
@@ -889,6 +890,8 @@
     ctx.strokeRect(50, 90, 500, 500);
 
     ctx.textAlign = "left";
+    
+    // 宿主名字
     ctx.fillStyle = "#ff7300";
     ctx.font = "bold 24px sans-serif";
     ctx.fillText("怪獸宿主：", 50, 630);
@@ -896,6 +899,7 @@
     ctx.font = "24px sans-serif";
     ctx.fillText(currentUserName, 180, 630);
 
+    // 內心怪獸
     ctx.fillStyle = "#ff7300";
     ctx.font = "bold 24px sans-serif";
     ctx.fillText("內心怪獸：", 50, 675);
@@ -903,6 +907,7 @@
     ctx.font = "bold 26px sans-serif";
     ctx.fillText(finalMonsterResult.name, 180, 675);
 
+    // 嚇人指數
     ctx.fillStyle = "#ff7300";
     ctx.font = "bold 24px sans-serif";
     ctx.fillText("嚇人指數：", 50, 720);
@@ -910,6 +915,7 @@
     ctx.font = "bold 28px monospace";
     ctx.fillText(`${finalScareScore}`, 180, 720);
 
+    // 怪獸簡介
     ctx.fillStyle = "#ff7300";
     ctx.font = "bold 24px sans-serif";
     ctx.fillText("怪獸簡介：", 50, 765);
@@ -917,17 +923,33 @@
     ctx.font = "italic 21px sans-serif";
     ctx.fillText(finalMonsterResult.phrase, 50, 805);
 
+    // 底部文字
     ctx.fillStyle = "#8a2be2";
     ctx.font = "18px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("萬聖節特別企劃 — 內心怪獸測驗", 300, 875);
 
-    // 2. 判斷是否為行動裝置，優先喚起原生相簿儲存面板
+    // 3. 判斷使用者裝置類型
+    const userAgent = navigator.userAgent || '';
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent) || 
+                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // 包含 iPadOS
+
+    const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
+
+    // 🖥️ 電腦端：直接維持傳統下載方式
+    if (!isMobile) {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = exportCanvas.toDataURL('image/png');
+        link.click();
+        return;
+    }
+
+    // 📱 手機端（iPhone / Android）：呼叫原生分享以存進相簿
     exportCanvas.toBlob(async (blob) => {
-        const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}.png`;
+        if (!blob) return;
         const file = new File([blob], fileName, { type: "image/png" });
 
-        // 如果手機支援 Web Share API 檔案分享
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             try {
                 await navigator.share({
@@ -935,16 +957,13 @@
                     title: '你的內心怪獸卡',
                     text: '快來看看我的萬聖節內心怪獸！'
                 });
-                return; // 成功呼叫分享面板（iPhone 點「儲存影像」即可存進相簿）
+                return;
             } catch (err) {
-                // 使用者自行按取消分享，不報錯
-                if (err.name !== 'AbortError') {
-                    console.log("分享失敗，改用備援方案:", err);
-                }
+                if (err.name === 'AbortError') return; // 使用者按取消不動作
             }
         }
 
-        // 3. 備援方案：電腦端或未支援分享的瀏覽器直接觸發傳統下載
+        // 手機若不支援 Web Share API 的降級備援
         const link = document.createElement('a');
         link.download = fileName;
         link.href = URL.createObjectURL(blob);
