@@ -24,7 +24,7 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
-            touch-action: manipulation; /* 防止手機連點時畫面意外縮放 */
+            touch-action: manipulation;
         }
         h1 {
             color: var(--primary-color);
@@ -42,9 +42,10 @@
             align-items: center;
             gap: 12px;
             perspective: 1000px;
+            position: relative;
         }
         
-        /* 1. 相機畫面區：佔比約 76~80vh */
+        /* 相機畫面區：佔比約 76~80vh */
         #cam-box {
             position: relative;
             width: 100%;
@@ -63,7 +64,7 @@
             transform: scaleX(-1);
         }
 
-        /* 連點掃描能量覆蓋層 */
+        /* 連點掃描互動覆蓋層（只在鏡頭內點擊有效） */
         #scan-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -71,7 +72,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.55);
+            background: rgba(0, 0, 0, 0.65);
             cursor: pointer;
             z-index: 10;
         }
@@ -94,58 +95,55 @@
             100% { top: 95%; }
         }
 
-        /* 能量收集面板樣式 */
+        /* 5秒倒數與連點計次面板 */
         #energy-panel {
-            width: 85%;
+            width: 90%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             pointer-events: none;
         }
-        .energy-title {
-            font-size: 1.4rem;
+        .timer-display {
+            font-size: 3.6rem;
             font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 15px var(--primary-color), 0 0 30px var(--secondary-color);
-            animation: titlePulse 0.6s infinite alternate;
-            text-align: center;
+            color: #ff3333;
+            text-shadow: 0 0 20px rgba(255, 51, 51, 0.8), 0 0 5px #000;
+            font-family: monospace;
+            line-height: 1;
         }
-        @keyframes titlePulse {
-            from { transform: scale(0.96); }
-            to { transform: scale(1.04); }
-        }
-        .energy-bar-wrap {
-            width: 100%;
-            height: 26px;
+        .tap-counter-box {
             background: rgba(0, 0, 0, 0.7);
             border: 2px solid var(--primary-color);
+            padding: 10px 24px;
             border-radius: 20px;
-            padding: 3px;
-            box-shadow: 0 0 15px rgba(255, 115, 0, 0.4);
-            overflow: hidden;
+            box-shadow: 0 0 15px rgba(255, 115, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
-        .energy-bar-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #8a2be2, #ff7300, #ffff00);
-            border-radius: 14px;
-            box-shadow: 0 0 12px rgba(255, 255, 0, 0.8);
-            transition: width 0.08s ease-out;
+        .tap-counter-title {
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: bold;
         }
-        .energy-text {
-            font-size: 2.2rem;
+        .tap-count-text {
+            font-size: 3.2rem;
             font-weight: 900;
             color: #ffff00;
             text-shadow: 0 0 15px #ff7300, 0 0 5px #000;
             font-family: monospace;
+            line-height: 1;
         }
         .tap-subhint {
             font-size: 0.95rem;
-            color: #ddd;
+            color: #ffcc80;
             background: rgba(0,0,0,0.6);
             padding: 4px 14px;
             border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
         }
 
         #status-text {
@@ -162,7 +160,7 @@
             pointer-events: none;
         }
 
-        /* 2. 下方控制區：輸入框與按鈕水平並列 */
+        /* 下方控制區：輸入框與按鈕水平並列 */
         .controls-row {
             width: 100%;
             display: flex;
@@ -220,6 +218,77 @@
         .btn-secondary {
             background: linear-gradient(135deg, var(--secondary-color), #5a189a);
             box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        /* 規則說明彈跳視窗 */
+        #rules-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        #rules-modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border: 3px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 24px 20px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(255, 115, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            animation: modalPop 0.3s ease-out;
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.85); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-title {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 115, 0, 0.5);
+            margin: 0;
+        }
+        .modal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            color: #ddd;
+            font-size: 0.98rem;
+            line-height: 1.5;
+            text-align: left;
+            padding-left: 0;
+            list-style: none;
+            margin: 0;
+        }
+        .modal-list li {
+            position: relative;
+            padding-left: 26px;
+        }
+        .modal-list li::before {
+            content: "🎃";
+            position: absolute;
+            left: 0;
+            top: 1px;
+        }
+        .modal-list strong {
+            color: #ff9d00;
+        }
+        .modal-btn-start {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.15rem;
+            margin-top: 5px;
         }
 
         #result-box {
@@ -319,10 +388,10 @@
             font-weight: bold;
             font-size: 1.25rem;
         }
-        .highlight-time {
+        .highlight-scare {
             color: #ffff00;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             text-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
             font-family: monospace;
         }
@@ -365,13 +434,9 @@
             text-align: center;
         }
 
-        /* 彩色綵帶畫布 (固定覆蓋在畫面最頂層) */
         #confetti-canvas {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             pointer-events: none;
             z-index: 9999;
             display: none;
@@ -388,16 +453,16 @@
         <div id="cam-box">
             <video id="webcam" autoplay playsinline muted></video>
             
-            <!-- 連點集氣互動層 -->
+            <!-- 5秒連點集氣互動層 -->
             <div id="scan-overlay">
                 <div class="scan-line"></div>
                 <div id="energy-panel">
-                    <div class="energy-title">⚡ 快速連點注入怪獸能量！ ⚡</div>
-                    <div class="energy-bar-wrap">
-                        <div class="energy-bar-fill" id="energy-bar-fill"></div>
+                    <div class="timer-display" id="timer-display">5.0s</div>
+                    <div class="tap-counter-box">
+                        <div class="tap-counter-title">⚡ 鏡頭內瘋狂連點！</div>
+                        <div class="tap-count-text" id="tap-count-text">0</div>
                     </div>
-                    <div class="energy-text" id="energy-text">0%</div>
-                    <div class="tap-subhint">手指點太慢，能量會倒退流失喔！🔥</div>
+                    <div class="tap-subhint">手指點越快，怪獸嚇人指數越高！🔥</div>
                 </div>
             </div>
             
@@ -410,7 +475,7 @@
             <button id="scan-btn" class="btn" disabled>🔮 開始注入能量</button>
         </div>
 
-        <!-- 結果頁面：直式合成卡片與延遲浮現按鈕 -->
+        <!-- 結果頁面：直式合成卡片與控制按鈕 -->
         <div id="result-box">
             <div class="monster-card" id="monster-card">
                 <div class="monster-image-container" id="monster-image-box"></div>
@@ -423,7 +488,7 @@
                         <strong>內心怪獸：</strong><span id="res-monster-name" class="highlight-monster"></span>
                     </div>
                     <div class="card-info-row">
-                        <strong>變身耗時：</strong><span id="res-elapsed-time" class="highlight-time"></span>
+                        <strong>嚇人指數：</strong><span id="res-scare-index" class="highlight-scare"></span>
                     </div>
                     <div class="card-info-row">
                         <strong>怪獸簡介：</strong>
@@ -434,17 +499,28 @@
 
             <div class="button-group" id="button-group">
                 <button id="download-btn" class="btn" style="width: 100%; max-width: 320px;">📸 下載怪獸結果卡片</button>
-                <button id="reset-btn" class="btn btn-secondary" style="width: 100%; max-width: 320px;">🔄 重置設施（下一位）</button>
+                <button id="reset-btn" class="btn btn-secondary" style="width: 100%; max-width: 320px;">🔄 不存檔 / 下一位挑戰</button>
             </div>
         </div>
     </div>
 
-    <!-- 綵帶 Canvas 與 卡片導出 Canvas -->
+    <!-- 規則說明彈跳視窗 -->
+    <div id="rules-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">⚡ 怪獸能量挑戰說明 ⚡</h3>
+            <ul class="modal-list">
+                <li>你將有 <strong>5 秒</strong> 可以狂點注入怪獸能量，點擊越多次，這隻怪獸的嚇人指數就越高！</li>
+                <li>滑鼠或手指必須放在<strong>攝影機鏡頭畫面區域內</strong>連點，才能成功累積次數。</li>
+                <li>測驗結束後可自由選擇是否下載卡片；若點擊「不存檔」，系統<strong>不會進行任何儲存</strong>。</li>
+            </ul>
+            <button id="modal-start-btn" class="btn modal-btn-start">😈 我準備好了，開始 5 秒挑戰！</button>
+        </div>
+    </div>
+
     <canvas id="confetti-canvas"></canvas>
     <canvas id="export-canvas" style="display:none;"></canvas>
 
     <script>
-        // 🎵 在陣列中加入 soundUrl 欄位，指向自訂的 mp3 配音
         const MONSTERS = [
             { 
                 id: 'werewolf', 
@@ -505,17 +581,14 @@
         ];
 
         let isCameraReady = false;
-        let isCharging = false;
-        let energyValue = 0;
-        let decayInterval = null;
+        let isChallenging = false;
+        let tapCount = 0;
+        let countdownTimer = null;
+        let challengeEndTime = 0;
+        let finalScareScore = 0;
         let finalMonsterResult = null;
         let currentUserName = '';
 
-        // ⏱️ 計時器變數
-        let chargeStartTime = 0;
-        let currentElapsedSeconds = '0.00';
-
-        // 🔊 目前播放中的音訊物件
         let currentAudio = null;
 
         const video = document.getElementById("webcam");
@@ -524,9 +597,11 @@
         const controlsRow = document.getElementById("controls-row");
         const scanBtn = document.getElementById("scan-btn");
         const scanOverlay = document.getElementById("scan-overlay");
-        const energyBarFill = document.getElementById("energy-bar-fill");
-        const energyText = document.getElementById("energy-text");
+        const timerDisplay = document.getElementById("timer-display");
+        const tapCountText = document.getElementById("tap-count-text");
         const statusText = document.getElementById("status-text");
+        const rulesModal = document.getElementById("rules-modal");
+        const modalStartBtn = document.getElementById("modal-start-btn");
         const resultBox = document.getElementById("result-box");
         const monsterCard = document.getElementById("monster-card");
         const buttonGroup = document.getElementById("button-group");
@@ -535,7 +610,6 @@
         const messageBox = document.getElementById("message-box");
         const confettiCanvas = document.getElementById("confetti-canvas");
 
-        // --- 🎵 MP3 播放函式 ---
         function playMonsterMp3(monster) {
             if (!monster || !monster.soundUrl) return;
             try {
@@ -553,7 +627,6 @@
             }
         }
 
-        // --- 🎊 南瓜王大獎彩色綵帶動畫 (Confetti) ---
         let confettiAnimationId = null;
         function triggerConfetti() {
             confettiCanvas.style.display = 'block';
@@ -622,15 +695,14 @@
             render();
         }
 
-        // --- 核心邏輯 ---
         function updateScanBtnState() {
             const hasName = userNameInput.value.trim().length > 0;
-            if (isCameraReady && hasName && !isCharging) {
+            if (isCameraReady && hasName && !isChallenging) {
                 scanBtn.disabled = false;
                 statusText.innerText = "準備就緒，點擊右方按鈕！";
             } else if (isCameraReady && !hasName) {
                 scanBtn.disabled = true;
-                statusText.innerText = "請輸入名字後開始掃描 ✍️";
+                statusText.innerText = "請輸入名字後開始挑戰 ✍️";
             }
         }
 
@@ -659,76 +731,78 @@
             }
         }
 
-        // 點擊「開始掃描」：開始計時並進入連點集氣模式
+        // 點擊「開始注入能量」：彈出說明視窗
         scanBtn.addEventListener("click", () => {
             currentUserName = userNameInput.value.trim();
-            if (!currentUserName || isCharging || !isCameraReady) return;
-
-            isCharging = true;
-            energyValue = 0;
-            energyBarFill.style.width = '0%';
-            energyText.innerText = '0%';
-            
-            // ⏱️ 開始計時 (毫秒)
-            chargeStartTime = Date.now();
-
-            controlsRow.style.display = 'none';
-            statusText.innerText = "⚡ 連續狂點畫面注入能量！";
-            scanOverlay.classList.add('active');
-
-            // 啟動能量緩慢流失機制 (每 50ms 扣減 0.75%)
-            decayInterval = setInterval(() => {
-                if (energyValue > 0) {
-                    energyValue = Math.max(0, energyValue - 0.75);
-                    energyBarFill.style.width = `${energyValue}%`;
-                    energyText.innerText = `${Math.floor(energyValue)}%`;
-                }
-            }, 50);
+            if (!currentUserName || isChallenging || !isCameraReady) return;
+            rulesModal.classList.add("show");
         });
 
-        // 點擊畫面任意區域進行能量累積
-        function handleChargeTap(e) {
-            if (!isCharging) return;
-            e.preventDefault();
+        // 點擊彈窗的「開始挑戰」按鈕：啟動 5 秒倒數與連點
+        modalStartBtn.addEventListener("click", () => {
+            rulesModal.classList.remove("show");
+            startEnergyChallenge();
+        });
 
-            // 每次點擊增加約 7.5% 能量
-            energyValue = Math.min(100, energyValue + 7.5);
-            energyBarFill.style.width = `${energyValue}%`;
-            energyText.innerText = `${Math.floor(energyValue)}%`;
+        function startEnergyChallenge() {
+            isChallenging = true;
+            tapCount = 0;
+            tapCountText.innerText = '0';
+            timerDisplay.innerText = '5.0s';
+            
+            controlsRow.style.display = 'none';
+            statusText.innerText = "⚡ 請在鏡頭畫面內瘋狂連點！";
+            scanOverlay.classList.add('active');
 
-            // 充飽 100% 成功變身
-            if (energyValue >= 100) {
-                isCharging = false;
-                clearInterval(decayInterval);
+            const totalDuration = 5000;
+            challengeEndTime = Date.now() + totalDuration;
 
-                // ⏱️ 計算從按下掃描到集滿 100% 的總耗時 (秒，保留兩位小數)
-                const elapsedMs = Date.now() - chargeStartTime;
-                currentElapsedSeconds = (elapsedMs / 1000).toFixed(2);
+            countdownTimer = setInterval(() => {
+                const remaining = Math.max(0, challengeEndTime - Date.now());
+                timerDisplay.innerText = (remaining / 1000).toFixed(1) + 's';
 
-                finishTransformation();
-            }
+                if (remaining <= 0) {
+                    clearInterval(countdownTimer);
+                    isChallenging = false;
+                    finishChallenge();
+                }
+            }, 60);
         }
 
-        scanOverlay.addEventListener("pointerdown", handleChargeTap);
+        // 監聽鏡頭內的連點事件
+        scanOverlay.addEventListener("pointerdown", (e) => {
+            if (!isChallenging) return;
+            e.preventDefault();
 
-        function finishTransformation() {
+            tapCount++;
+            tapCountText.innerText = tapCount;
+
+            tapCountText.style.transform = 'scale(1.2)';
+            setTimeout(() => { tapCountText.style.transform = 'scale(1)'; }, 60);
+        });
+
+        // 5秒結束：點幾下就是多少嚇人指數
+        function finishChallenge() {
             scanOverlay.classList.remove('active');
+
+            // 嚇人指數 = 點擊次數
+            finalScareScore = tapCount;
 
             const randomIndex = Math.floor(Math.random() * MONSTERS.length);
             finalMonsterResult = MONSTERS[randomIndex];
 
             camBox.style.display = 'none';
 
-            // 顯示卡片結果（包含耗費時間）
-            showResultCard(finalMonsterResult, currentUserName, currentElapsedSeconds);
+            // 顯示卡片資訊（嚇人指數直接傳入數值）
+            showResultCard(finalMonsterResult, currentUserName, finalScareScore);
 
             resultBox.classList.add('show');
             monsterCard.classList.add('animate-pop-flip');
 
-            // 🔊 根據怪獸撥放對應 MP3 配音
+            // 播放 MP3 配音
             playMonsterMp3(finalMonsterResult);
 
-            // 🎃 萬聖南瓜王特別彩蛋：蹦出全螢幕彩色綵帶
+            // 南瓜王綵帶彩蛋
             if (finalMonsterResult.id === 'pumpkin') {
                 setTimeout(triggerConfetti, 300);
             }
@@ -738,7 +812,7 @@
             }, 1200);
         }
 
-        function showResultCard(monster, userName, elapsedSeconds) {
+        function showResultCard(monster, userName, scareScore) {
             const imageBox = document.getElementById('monster-image-box');
             imageBox.style.borderColor = monster.bgColor || 'var(--primary-color)';
 
@@ -755,10 +829,11 @@
 
             document.getElementById('res-user-name').innerText = userName;
             document.getElementById('res-monster-name').innerText = monster.name;
-            document.getElementById('res-elapsed-time').innerText = `${elapsedSeconds} 秒`;
+            document.getElementById('res-scare-index').innerText = scareScore;
             document.getElementById('res-monster-desc').innerText = monster.phrase;
         }
 
+        // 不存檔 / 重置設施
         resetBtn.addEventListener("click", () => {
             if (currentAudio) {
                 currentAudio.pause();
@@ -776,7 +851,7 @@
             updateScanBtnState();
         });
 
-        // 下載卡片繪製：同時將變身秒數合成進圖檔
+        // 選擇下載卡片：導出包含純數字「嚇人指數」的 PNG
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -790,18 +865,18 @@
             ctx.fillStyle = "#190f26";
             ctx.fillRect(0, 0, 600, 920);
 
-            // 卡片邊框
+            // 外框
             ctx.strokeStyle = "#ff7300";
             ctx.lineWidth = 10;
             ctx.strokeRect(15, 15, 570, 890);
 
-            // 頂部標題
+            // 標題
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 34px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("🎃 萬聖節內心怪獸卡 🎃", 300, 65);
+            ctx.fillText("🎃 萬聖節怪獸變身卡 🎃", 300, 65);
 
-            // 正方形怪獸圖片
+            // 怪獸圖片
             const imgContainer = document.querySelector('#monster-image-box img');
             if (imgContainer && imgContainer.complete) {
                 ctx.drawImage(imgContainer, 50, 90, 500, 500);
@@ -834,13 +909,13 @@
             ctx.font = "bold 26px sans-serif";
             ctx.fillText(finalMonsterResult.name, 180, 675);
 
-            // 變身耗時 (即時計算秒數)
+            // 嚇人指數 (直接印出純數字)
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 24px sans-serif";
-            ctx.fillText("變身耗時：", 50, 720);
+            ctx.fillText("嚇人指數：", 50, 720);
             ctx.fillStyle = "#ffff00";
-            ctx.font = "bold 26px monospace";
-            ctx.fillText(`${currentElapsedSeconds} 秒`, 180, 720);
+            ctx.font = "bold 28px monospace";
+            ctx.fillText(`${finalScareScore}`, 180, 720);
 
             // 怪獸簡介
             ctx.fillStyle = "#ff7300";
@@ -850,14 +925,14 @@
             ctx.font = "italic 21px sans-serif";
             ctx.fillText(finalMonsterResult.phrase, 50, 805);
 
-            // 底部活動文字
+            // 底部活動字樣
             ctx.fillStyle = "#8a2be2";
             ctx.font = "18px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("萬聖節特別企劃 — 內心怪獸測驗", 300, 875);
+            ctx.fillText("萬聖節特別企劃 — 百 GO 怪獸變身", 300, 875);
 
             const link = document.createElement('a');
-            link.download = `${currentUserName}-內心怪獸-${finalMonsterResult.name}.png`;
+            link.download = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
             link.href = exportCanvas.toDataURL('image/png');
             link.click();
         });
