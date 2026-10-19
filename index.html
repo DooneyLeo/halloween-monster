@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>你的內心怪獸 🎃</title>
     <style>
         :root {
@@ -24,6 +24,7 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
+            touch-action: manipulation; /* 防止手機快速雙擊時畫面放大縮小 */
         }
         h1 {
             color: var(--primary-color);
@@ -43,7 +44,7 @@
             perspective: 1000px;
         }
         
-        /* 相機畫面區：佔比約 78~80% 視窗高度 */
+        /* 1. 相機畫面區：佔比約 76~80vh */
         #cam-box {
             position: relative;
             width: 100%;
@@ -53,6 +54,7 @@
             border-radius: 18px;
             overflow: hidden;
             box-shadow: 0 0 25px rgba(138, 43, 226, 0.4);
+            user-select: none;
         }
         #webcam {
             width: 100%;
@@ -61,15 +63,17 @@
             transform: scaleX(-1);
         }
 
+        /* 連點掃描能量覆蓋層 */
         #scan-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
             display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.55);
+            cursor: pointer;
+            z-index: 10;
         }
         #scan-overlay.active {
             display: flex;
@@ -83,17 +87,65 @@
             background: linear-gradient(90deg, transparent, var(--primary-color), #fff, var(--primary-color), transparent);
             box-shadow: 0 0 15px var(--primary-color);
             animation: scanMove 1.5s ease-in-out infinite alternate;
+            pointer-events: none;
         }
         @keyframes scanMove {
             0% { top: 5%; }
             100% { top: 95%; }
         }
-        .scan-countdown {
-            font-size: 4rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-shadow: 0 0 20px #000;
-            animation: pulse 0.5s infinite alternate;
+
+        /* 能量收集面板樣式 */
+        #energy-panel {
+            width: 85%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .energy-title {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 15px var(--primary-color), 0 0 30px var(--secondary-color);
+            animation: titlePulse 0.6s infinite alternate;
+            text-align: center;
+        }
+        @keyframes titlePulse {
+            from { transform: scale(0.96); }
+            to { transform: scale(1.04); }
+        }
+        .energy-bar-wrap {
+            width: 100%;
+            height: 26px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 3px;
+            box-shadow: 0 0 15px rgba(255, 115, 0, 0.4);
+            overflow: hidden;
+        }
+        .energy-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #8a2be2, #ff7300, #ffff00);
+            border-radius: 14px;
+            box-shadow: 0 0 12px rgba(255, 255, 0, 0.8);
+            transition: width 0.08s ease-out;
+        }
+        .energy-text {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #ffff00;
+            text-shadow: 0 0 15px #ff7300, 0 0 5px #000;
+            font-family: monospace;
+        }
+        .tap-subhint {
+            font-size: 0.95rem;
+            color: #ddd;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 14px;
+            border-radius: 12px;
         }
 
         #status-text {
@@ -107,9 +159,10 @@
             font-size: 0.85rem;
             color: var(--primary-color);
             white-space: nowrap;
+            pointer-events: none;
         }
 
-        /* 下方控制區：輸入框與按鈕水平並列 */
+        /* 2. 下方控制區：輸入框與按鈕水平並列 */
         .controls-row {
             width: 100%;
             display: flex;
@@ -193,6 +246,7 @@
             backface-visibility: hidden;
             opacity: 0;
             overflow: hidden;
+            position: relative;
         }
 
         .monster-card.animate-pop-flip {
@@ -289,11 +343,6 @@
             pointer-events: auto;
         }
 
-        @keyframes pulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.1); }
-        }
-
         #message-box {
             position: fixed;
             top: 20px;
@@ -308,6 +357,18 @@
             display: none;
             text-align: center;
         }
+
+        /* 彩色綵帶畫布 (固定覆蓋在畫面最頂層) */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -316,22 +377,33 @@
     <div id="message-box"></div>
     
     <div id="stage-container">
+        <!-- 相機畫面置中區 -->
         <div id="cam-box">
             <video id="webcam" autoplay playsinline muted></video>
             
+            <!-- 連點集氣互動層 -->
             <div id="scan-overlay">
                 <div class="scan-line"></div>
-                <div class="scan-countdown" id="scan-countdown">3</div>
+                <div id="energy-panel">
+                    <div class="energy-title">⚡ 瘋狂連點注入魔力！ ⚡</div>
+                    <div class="energy-bar-wrap">
+                        <div class="energy-bar-fill" id="energy-bar-fill"></div>
+                    </div>
+                    <div class="energy-text" id="energy-text">0%</div>
+                    <div class="tap-subhint">手指點太慢能量會倒退流失喔！🔥</div>
+                </div>
             </div>
             
             <div id="status-text">相機初始化中...</div>
         </div>
 
+        <!-- 下方控制列：名字輸入與掃描按鈕水平並列 -->
         <div class="controls-row" id="controls-row">
             <input type="text" id="user-name-input" placeholder="✍️ 輸入怪獸宿主名字" maxlength="15" autocomplete="off">
             <button id="scan-btn" class="btn" disabled>🔮 開始掃描</button>
         </div>
 
+        <!-- 結果頁面：直式合成卡片與延遲浮現按鈕 -->
         <div id="result-box">
             <div class="monster-card" id="monster-card">
                 <div class="monster-image-container" id="monster-image-box"></div>
@@ -357,6 +429,8 @@
         </div>
     </div>
 
+    <!-- 綵帶 Canvas 與 卡片導出 Canvas -->
+    <canvas id="confetti-canvas"></canvas>
     <canvas id="export-canvas" style="display:none;"></canvas>
 
     <script>
@@ -394,7 +468,7 @@
                 name: '萬聖南瓜王', 
                 bgColor: '#1a3320', 
                 imageUrl: './pumpkin.jpg', 
-                phrase: '「南瓜對身體很好，不要討厭我。」' 
+                phrase: '「南瓜對身體很好，恭喜抽中全場大獎！」' 
             },
             { 
                 id: 'wizard', 
@@ -413,7 +487,9 @@
         ];
 
         let isCameraReady = false;
-        let isScanning = false;
+        let isCharging = false;
+        let energyValue = 0;
+        let decayInterval = null;
         let finalMonsterResult = null;
         let currentUserName = '';
 
@@ -423,7 +499,8 @@
         const controlsRow = document.getElementById("controls-row");
         const scanBtn = document.getElementById("scan-btn");
         const scanOverlay = document.getElementById("scan-overlay");
-        const scanCountdownEl = document.getElementById("scan-countdown");
+        const energyBarFill = document.getElementById("energy-bar-fill");
+        const energyText = document.getElementById("energy-text");
         const statusText = document.getElementById("status-text");
         const resultBox = document.getElementById("result-box");
         const monsterCard = document.getElementById("monster-card");
@@ -431,10 +508,260 @@
         const resetBtn = document.getElementById("reset-btn");
         const downloadBtn = document.getElementById("download-btn");
         const messageBox = document.getElementById("message-box");
+        const confettiCanvas = document.getElementById("confetti-canvas");
 
+        // --- 🎵 Web Audio API 原生音效合成器 (免外部音效檔，跨平台 100% 播放) ---
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // 每次連點點擊時的打擊回饋音
+        function playTapSound() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                const baseFreq = 260 + energyValue * 3.5;
+                osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq + 120, ctx.currentTime + 0.05);
+
+                gain.gain.setValueAtTime(0.18, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.06);
+            } catch (e) { console.log(e); }
+        }
+
+        // 依據抽中的怪獸播放專屬登場音效
+        function playMonsterSound(monsterId) {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                if (monsterId === 'werewolf') {
+                    // 🐺 嗷嗚狼人：逼真低沉升降狼嚎聲
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(540, now + 0.8);
+                    osc.frequency.exponentialRampToValueAtTime(260, now + 2.2);
+
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(700, now);
+
+                    gain.gain.setValueAtTime(0.01, now);
+                    gain.gain.linearRampToValueAtTime(0.35, now + 0.5);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 2.5);
+
+                } else if (monsterId === 'ghost') {
+                    // 👻 驚嚇綠人：空靈顫音特雷門鬼魂聲
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const lfo = ctx.createOscillator();
+                    const lfoGain = ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(620, now);
+                    osc.frequency.exponentialRampToValueAtTime(320, now + 2.2);
+
+                    lfo.type = 'sine';
+                    lfo.frequency.setValueAtTime(6, now); // 6Hz 恐怖顫音
+                    lfoGain.gain.setValueAtTime(35, now);
+
+                    lfo.connect(osc.frequency);
+                    gain.gain.setValueAtTime(0.01, now);
+                    gain.gain.linearRampToValueAtTime(0.28, now + 0.4);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    lfo.start(now);
+                    osc.start(now);
+                    lfo.stop(now + 2.5);
+                    osc.stop(now + 2.5);
+
+                } else if (monsterId === 'pumpkin') {
+                    // 🎃 萬聖南瓜王：大獎慶祝號角 + 勝利琶音
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+                        gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.7);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.12);
+                        osc.stop(now + idx * 0.12 + 0.75);
+                    });
+
+                } else if (monsterId === 'frank') {
+                    // ⚡ 科學怪人：高壓電流閃爍電擊聲
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(90, now);
+                    osc.frequency.linearRampToValueAtTime(220, now + 0.1);
+                    osc.frequency.linearRampToValueAtTime(60, now + 0.4);
+
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+
+                } else if (monsterId === 'vampire') {
+                    // 🦇 吸血綠人：古堡陰森小調低音
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(146.83, now); // D3
+                    osc.frequency.setValueAtTime(174.61, now + 0.4); // F3
+
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 1.8);
+
+                } else if (monsterId === 'wizard') {
+                    // 🪄 魔法綠人：向上琶音魔法晶瑩剔透聲
+                    [800, 1000, 1200, 1500, 1900].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+                        gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.35);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.4);
+                    });
+
+                } else {
+                    // 🏺 繃帶綠人：沉悶古老封印釋放音
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.exponentialRampToValueAtTime(65, now + 1.5);
+
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 1.6);
+                }
+            } catch (err) {
+                console.log("Audio play error:", err);
+            }
+        }
+
+        // --- 🎊 南瓜王大獎專屬：全螢幕彩色綵帶蹦發特效 (Confetti) ---
+        let confettiAnimationId = null;
+        function triggerConfetti() {
+            confettiCanvas.style.display = 'block';
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+            const ctx = confettiCanvas.getContext('2d');
+            
+            const particles = [];
+            const colors = ['#ff7300', '#ffd700', '#8a2be2', '#00ff88', '#ff0055', '#00d0ff'];
+
+            // 生成 120 顆彩色綵帶碎片
+            for (let i = 0; i < 120; i++) {
+                particles.push({
+                    x: confettiCanvas.width / 2 + (Math.random() - 0.5) * 80,
+                    y: confettiCanvas.height / 2 + (Math.random() - 0.5) * 80,
+                    w: Math.random() * 12 + 6,
+                    h: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vx: (Math.random() - 0.5) * 22,
+                    vy: (Math.random() - 0.7) * 20 - 4,
+                    rotation: Math.random() * 360,
+                    vRot: (Math.random() - 0.5) * 10,
+                    gravity: 0.38,
+                    drag: 0.96,
+                    opacity: 1
+                });
+            }
+
+            let startTimestamp = Date.now();
+
+            function render() {
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    p.vx *= p.drag;
+                    p.vy = p.vy * p.drag + p.gravity;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rotation += p.vRot;
+
+                    if (Date.now() - startTimestamp > 2500) {
+                        p.opacity -= 0.015;
+                    }
+
+                    if (p.opacity > 0 && p.y < confettiCanvas.height + 50) {
+                        alive = true;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rotation * Math.PI) / 180);
+                        ctx.globalAlpha = Math.max(0, p.opacity);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                        ctx.restore();
+                    }
+                });
+
+                if (alive) {
+                    confettiAnimationId = requestAnimationFrame(render);
+                } else {
+                    confettiCanvas.style.display = 'none';
+                    cancelAnimationFrame(confettiAnimationId);
+                }
+            }
+
+            cancelAnimationFrame(confettiAnimationId);
+            render();
+        }
+
+        // --- 核心邏輯 ---
         function updateScanBtnState() {
             const hasName = userNameInput.value.trim().length > 0;
-            if (isCameraReady && hasName && !isScanning) {
+            if (isCameraReady && hasName && !isCharging) {
                 scanBtn.disabled = false;
                 statusText.innerText = "準備就緒，點擊右方按鈕！";
             } else if (isCameraReady && !hasName) {
@@ -445,7 +772,6 @@
 
         userNameInput.addEventListener("input", updateScanBtnState);
 
-        // 修復：完整的相機初始化與備援邏輯
         async function initCamera() {
             try {
                 statusText.innerText = "請求相機權限中... 📷";
@@ -469,31 +795,58 @@
             }
         }
 
+        // 點擊「開始掃描」：切換至連點集氣模式
         scanBtn.addEventListener("click", () => {
             currentUserName = userNameInput.value.trim();
-            if (!currentUserName || isScanning || !isCameraReady) return;
+            if (!currentUserName || isCharging || !isCameraReady) return;
             
-            isScanning = true;
+            // 啟用 Web Audio 上下文授權
+            getAudioContext();
+
+            isCharging = true;
+            energyValue = 0;
+            energyBarFill.style.width = '0%';
+            energyText.innerText = '0%';
+            
             controlsRow.style.display = 'none';
-            statusText.innerText = "正在分析你的內心怪獸...";
+            statusText.innerText = "⚡ 連續狂點畫面注入能量！";
             scanOverlay.classList.add('active');
 
-            let countdown = 3;
-            scanCountdownEl.innerText = countdown;
-
-            const timer = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    scanCountdownEl.innerText = countdown;
-                } else {
-                    clearInterval(timer);
-                    finishScan();
+            // 啟動能量緩慢流失機制 (每 50ms 扣減 0.75%，不點就會消退)
+            decayInterval = setInterval(() => {
+                if (energyValue > 0) {
+                    energyValue = Math.max(0, energyValue - 0.75);
+                    energyBarFill.style.width = `${energyValue}%`;
+                    energyText.innerText = `${Math.floor(energyValue)}%`;
                 }
-            }, 1000);
+            }, 50);
         });
 
-        function finishScan() {
-            isScanning = false;
+        // 點擊畫面任意區域進行能量累積
+        function handleChargeTap(e) {
+            if (!isCharging) return;
+            e.preventDefault();
+
+            // 每次點擊增加約 7.5% 能量
+            energyValue = Math.min(100, energyValue + 7.5);
+            energyBarFill.style.width = `${energyValue}%`;
+            energyText.innerText = `${Math.floor(energyValue)}%`;
+
+            // 點擊打擊回饋音效
+            playTapSound();
+
+            // 充飽 100% 成功變身
+            if (energyValue >= 100) {
+                isCharging = false;
+                clearInterval(decayInterval);
+                finishTransformation();
+            }
+        }
+
+        // 支援觸控與滑鼠點擊
+        scanOverlay.addEventListener("pointerdown", handleChargeTap);
+
+        function finishTransformation() {
             scanOverlay.classList.remove('active');
 
             const randomIndex = Math.floor(Math.random() * MONSTERS.length);
@@ -501,10 +854,19 @@
 
             camBox.style.display = 'none';
 
+            // 顯示卡片結果
             showResultCard(finalMonsterResult, currentUserName);
 
             resultBox.classList.add('show');
             monsterCard.classList.add('animate-pop-flip');
+
+            // 🔊 播放該怪獸專屬配音
+            playMonsterSound(finalMonsterResult.id);
+
+            // 🎃 萬聖南瓜王特別彩蛋：蹦出全螢幕彩色綵帶
+            if (finalMonsterResult.id === 'pumpkin') {
+                setTimeout(triggerConfetti, 300);
+            }
 
             setTimeout(() => {
                 buttonGroup.classList.add('show');
