@@ -24,7 +24,7 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
-            touch-action: manipulation; /* 防止手機快速雙擊時畫面放大縮小 */
+            touch-action: manipulation; /* 防止手機連點時畫面意外縮放 */
         }
         h1 {
             color: var(--primary-color);
@@ -319,6 +319,13 @@
             font-weight: bold;
             font-size: 1.25rem;
         }
+        .highlight-time {
+            color: #ffff00;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
+            font-family: monospace;
+        }
         .desc-text {
             font-style: italic;
             color: #f0e6d2;
@@ -416,6 +423,9 @@
                         <strong>內心怪獸：</strong><span id="res-monster-name" class="highlight-monster"></span>
                     </div>
                     <div class="card-info-row">
+                        <strong>變身耗時：</strong><span id="res-elapsed-time" class="highlight-time"></span>
+                    </div>
+                    <div class="card-info-row">
                         <strong>怪獸簡介：</strong>
                         <div id="res-monster-desc" class="desc-text"></div>
                     </div>
@@ -434,12 +444,14 @@
     <canvas id="export-canvas" style="display:none;"></canvas>
 
     <script>
+        // 🎵 在陣列中加入 soundUrl 欄位，指向自訂的 mp3 配音
         const MONSTERS = [
             { 
                 id: 'werewolf', 
                 name: '綠毛狼人', 
                 bgColor: '#4b3621', 
                 imageUrl: './wolf.jpg', 
+                soundUrl: './sounds/wolf.mp3',
                 phrase: '「嗷嗚～今晚是滿月嗎？小心別惹我！」' 
             },
             { 
@@ -447,6 +459,7 @@
                 name: '科學綠人', 
                 bgColor: '#3a3b2a', 
                 imageUrl: './frank.jpg', 
+                soundUrl: './sounds/zombie.mp3',
                 phrase: '「腦袋...我要吃腦袋...或是珍珠奶茶...」' 
             },
             { 
@@ -454,6 +467,7 @@
                 name: '吸血綠人', 
                 bgColor: '#4a0e17', 
                 imageUrl: './vampire.jpg', 
+                soundUrl: './sounds/vampire.mp3',
                 phrase: '「不吸血，只靠冰美式或拿鐵續命。」' 
             },
             { 
@@ -461,6 +475,7 @@
                 name: '驚嚇綠人', 
                 bgColor: '#1a3320', 
                 imageUrl: './ghost.jpg', 
+                soundUrl: './sounds/ghost.mp3',
                 phrase: '「你看不到我...你看不到我...」' 
             },
             { 
@@ -468,6 +483,7 @@
                 name: '萬聖南瓜王', 
                 bgColor: '#1a3320', 
                 imageUrl: './pumpkin.jpg', 
+                soundUrl: './sounds/pumpkin.mp3',
                 phrase: '「南瓜對身體很好，恭喜抽中全場大獎！」' 
             },
             { 
@@ -475,6 +491,7 @@
                 name: '魔法綠人', 
                 bgColor: '#1a3320', 
                 imageUrl: './wizard.jpg', 
+                soundUrl: './sounds/wizard.mp3',
                 phrase: '「登愣，我要把星期一變不見。」' 
             },
             { 
@@ -482,6 +499,7 @@
                 name: '繃帶綠人', 
                 bgColor: '#1a3320', 
                 imageUrl: './mummy.jpg', 
+                soundUrl: './sounds/mummy.mp3',
                 phrase: '「不要蓋住鼻子，我有過敏。」' 
             }
         ];
@@ -492,6 +510,13 @@
         let decayInterval = null;
         let finalMonsterResult = null;
         let currentUserName = '';
+
+        // ⏱️ 計時器變數
+        let chargeStartTime = 0;
+        let currentElapsedSeconds = '0.00';
+
+        // 🔊 目前播放中的音訊物件
+        let currentAudio = null;
 
         const video = document.getElementById("webcam");
         const camBox = document.getElementById("cam-box");
@@ -510,185 +535,25 @@
         const messageBox = document.getElementById("message-box");
         const confettiCanvas = document.getElementById("confetti-canvas");
 
-        // --- 🎵 Web Audio API 原生音效合成器 (免外部音效檔，跨平台 100% 播放) ---
-        let audioCtx = null;
-        function getAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return audioCtx;
-        }
-
-        // 每次連點點擊時的打擊回饋音
-        function playTapSound() {
+        // --- 🎵 MP3 播放函式 ---
+        function playMonsterMp3(monster) {
+            if (!monster || !monster.soundUrl) return;
             try {
-                const ctx = getAudioContext();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle';
-                const baseFreq = 260 + energyValue * 3.5;
-                osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(baseFreq + 120, ctx.currentTime + 0.05);
-
-                gain.gain.setValueAtTime(0.18, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.06);
-            } catch (e) { console.log(e); }
-        }
-
-        // 依據抽中的怪獸播放專屬登場音效
-        function playMonsterSound(monsterId) {
-            try {
-                const ctx = getAudioContext();
-                const now = ctx.currentTime;
-
-                if (monsterId === 'werewolf') {
-                    // 🐺 嗷嗚狼人：逼真低沉升降狼嚎聲
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(180, now);
-                    osc.frequency.exponentialRampToValueAtTime(540, now + 0.8);
-                    osc.frequency.exponentialRampToValueAtTime(260, now + 2.2);
-
-                    const filter = ctx.createBiquadFilter();
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(700, now);
-
-                    gain.gain.setValueAtTime(0.01, now);
-                    gain.gain.linearRampToValueAtTime(0.35, now + 0.5);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
-
-                    osc.connect(filter);
-                    filter.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 2.5);
-
-                } else if (monsterId === 'ghost') {
-                    // 👻 驚嚇綠人：空靈顫音特雷門鬼魂聲
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    const lfo = ctx.createOscillator();
-                    const lfoGain = ctx.createGain();
-
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(620, now);
-                    osc.frequency.exponentialRampToValueAtTime(320, now + 2.2);
-
-                    lfo.type = 'sine';
-                    lfo.frequency.setValueAtTime(6, now); // 6Hz 恐怖顫音
-                    lfoGain.gain.setValueAtTime(35, now);
-
-                    lfo.connect(osc.frequency);
-                    gain.gain.setValueAtTime(0.01, now);
-                    gain.gain.linearRampToValueAtTime(0.28, now + 0.4);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    lfo.start(now);
-                    osc.start(now);
-                    lfo.stop(now + 2.5);
-                    osc.stop(now + 2.5);
-
-                } else if (monsterId === 'pumpkin') {
-                    // 🎃 萬聖南瓜王：大獎慶祝號角 + 勝利琶音
-                    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
-                    notes.forEach((freq, idx) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
-
-                        gain.gain.setValueAtTime(0.3, now + idx * 0.12);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.7);
-
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(now + idx * 0.12);
-                        osc.stop(now + idx * 0.12 + 0.75);
-                    });
-
-                } else if (monsterId === 'frank') {
-                    // ⚡ 科學怪人：高壓電流閃爍電擊聲
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(90, now);
-                    osc.frequency.linearRampToValueAtTime(220, now + 0.1);
-                    osc.frequency.linearRampToValueAtTime(60, now + 0.4);
-
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.5);
-
-                } else if (monsterId === 'vampire') {
-                    // 🦇 吸血綠人：古堡陰森小調低音
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(146.83, now); // D3
-                    osc.frequency.setValueAtTime(174.61, now + 0.4); // F3
-
-                    gain.gain.setValueAtTime(0.25, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 1.8);
-
-                } else if (monsterId === 'wizard') {
-                    // 🪄 魔法綠人：向上琶音魔法晶瑩剔透聲
-                    [800, 1000, 1200, 1500, 1900].forEach((freq, idx) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
-
-                        gain.gain.setValueAtTime(0.2, now + idx * 0.08);
-                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.35);
-
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(now + idx * 0.08);
-                        osc.stop(now + idx * 0.08 + 0.4);
-                    });
-
-                } else {
-                    // 🏺 繃帶綠人：沉悶古老封印釋放音
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(120, now);
-                    osc.frequency.exponentialRampToValueAtTime(65, now + 1.5);
-
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 1.6);
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
                 }
-            } catch (err) {
-                console.log("Audio play error:", err);
+                currentAudio = new Audio(monster.soundUrl);
+                currentAudio.volume = 0.9;
+                currentAudio.play().catch(err => {
+                    console.log("音訊播放被瀏覽器阻擋或找不到檔案:", err);
+                });
+            } catch (e) {
+                console.error("播放音效失敗:", e);
             }
         }
 
-        // --- 🎊 南瓜王大獎專屬：全螢幕彩色綵帶蹦發特效 (Confetti) ---
+        // --- 🎊 南瓜王大獎彩色綵帶動畫 (Confetti) ---
         let confettiAnimationId = null;
         function triggerConfetti() {
             confettiCanvas.style.display = 'block';
@@ -699,7 +564,6 @@
             const particles = [];
             const colors = ['#ff7300', '#ffd700', '#8a2be2', '#00ff88', '#ff0055', '#00d0ff'];
 
-            // 生成 120 顆彩色綵帶碎片
             for (let i = 0; i < 120; i++) {
                 particles.push({
                     x: confettiCanvas.width / 2 + (Math.random() - 0.5) * 80,
@@ -795,24 +659,24 @@
             }
         }
 
-        // 點擊「開始掃描」：切換至連點集氣模式
+        // 點擊「開始掃描」：開始計時並進入連點集氣模式
         scanBtn.addEventListener("click", () => {
             currentUserName = userNameInput.value.trim();
             if (!currentUserName || isCharging || !isCameraReady) return;
-            
-            // 啟用 Web Audio 上下文授權
-            getAudioContext();
 
             isCharging = true;
             energyValue = 0;
             energyBarFill.style.width = '0%';
             energyText.innerText = '0%';
             
+            // ⏱️ 開始計時 (毫秒)
+            chargeStartTime = Date.now();
+
             controlsRow.style.display = 'none';
             statusText.innerText = "⚡ 連續狂點畫面注入能量！";
             scanOverlay.classList.add('active');
 
-            // 啟動能量緩慢流失機制 (每 50ms 扣減 0.75%，不點就會消退)
+            // 啟動能量緩慢流失機制 (每 50ms 扣減 0.75%)
             decayInterval = setInterval(() => {
                 if (energyValue > 0) {
                     energyValue = Math.max(0, energyValue - 0.75);
@@ -832,18 +696,19 @@
             energyBarFill.style.width = `${energyValue}%`;
             energyText.innerText = `${Math.floor(energyValue)}%`;
 
-            // 點擊打擊回饋音效
-            playTapSound();
-
             // 充飽 100% 成功變身
             if (energyValue >= 100) {
                 isCharging = false;
                 clearInterval(decayInterval);
+
+                // ⏱️ 計算從按下掃描到集滿 100% 的總耗時 (秒，保留兩位小數)
+                const elapsedMs = Date.now() - chargeStartTime;
+                currentElapsedSeconds = (elapsedMs / 1000).toFixed(2);
+
                 finishTransformation();
             }
         }
 
-        // 支援觸控與滑鼠點擊
         scanOverlay.addEventListener("pointerdown", handleChargeTap);
 
         function finishTransformation() {
@@ -854,14 +719,14 @@
 
             camBox.style.display = 'none';
 
-            // 顯示卡片結果
-            showResultCard(finalMonsterResult, currentUserName);
+            // 顯示卡片結果（包含耗費時間）
+            showResultCard(finalMonsterResult, currentUserName, currentElapsedSeconds);
 
             resultBox.classList.add('show');
             monsterCard.classList.add('animate-pop-flip');
 
-            // 🔊 播放該怪獸專屬配音
-            playMonsterSound(finalMonsterResult.id);
+            // 🔊 根據怪獸撥放對應 MP3 配音
+            playMonsterMp3(finalMonsterResult);
 
             // 🎃 萬聖南瓜王特別彩蛋：蹦出全螢幕彩色綵帶
             if (finalMonsterResult.id === 'pumpkin') {
@@ -873,7 +738,7 @@
             }, 1200);
         }
 
-        function showResultCard(monster, userName) {
+        function showResultCard(monster, userName, elapsedSeconds) {
             const imageBox = document.getElementById('monster-image-box');
             imageBox.style.borderColor = monster.bgColor || 'var(--primary-color)';
 
@@ -890,10 +755,16 @@
 
             document.getElementById('res-user-name').innerText = userName;
             document.getElementById('res-monster-name').innerText = monster.name;
+            document.getElementById('res-elapsed-time').innerText = `${elapsedSeconds} 秒`;
             document.getElementById('res-monster-desc').innerText = monster.phrase;
         }
 
         resetBtn.addEventListener("click", () => {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
             monsterCard.classList.remove('animate-pop-flip');
             buttonGroup.classList.remove('show');
             resultBox.classList.remove('show');
@@ -905,6 +776,7 @@
             updateScanBtnState();
         });
 
+        // 下載卡片繪製：同時將變身秒數合成進圖檔
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -912,20 +784,24 @@
             const ctx = exportCanvas.getContext('2d');
             
             exportCanvas.width = 600;
-            exportCanvas.height = 900;
+            exportCanvas.height = 920;
 
+            // 背景底色
             ctx.fillStyle = "#190f26";
-            ctx.fillRect(0, 0, 600, 900);
+            ctx.fillRect(0, 0, 600, 920);
 
+            // 卡片邊框
             ctx.strokeStyle = "#ff7300";
             ctx.lineWidth = 10;
-            ctx.strokeRect(15, 15, 570, 870);
+            ctx.strokeRect(15, 15, 570, 890);
 
+            // 頂部標題
             ctx.fillStyle = "#ff7300";
             ctx.font = "bold 34px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("🎃 萬聖節內心怪獸卡 🎃", 300, 65);
 
+            // 正方形怪獸圖片
             const imgContainer = document.querySelector('#monster-image-box img');
             if (imgContainer && imgContainer.complete) {
                 ctx.drawImage(imgContainer, 50, 90, 500, 500);
@@ -942,31 +818,43 @@
 
             ctx.textAlign = "left";
             
+            // 宿主名字
             ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 26px sans-serif";
+            ctx.font = "bold 24px sans-serif";
             ctx.fillText("怪獸宿主：", 50, 630);
             ctx.fillStyle = "#ffffff";
-            ctx.font = "26px sans-serif";
-            ctx.fillText(currentUserName, 200, 630);
+            ctx.font = "24px sans-serif";
+            ctx.fillText(currentUserName, 180, 630);
 
+            // 內心怪獸
             ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 26px sans-serif";
-            ctx.fillText("內心怪獸：", 50, 680);
+            ctx.font = "bold 24px sans-serif";
+            ctx.fillText("內心怪獸：", 50, 675);
             ctx.fillStyle = "#ff9d00";
-            ctx.font = "bold 28px sans-serif";
-            ctx.fillText(finalMonsterResult.name, 200, 680);
-
-            ctx.fillStyle = "#ff7300";
             ctx.font = "bold 26px sans-serif";
-            ctx.fillText("怪獸簡介：", 50, 730);
-            ctx.fillStyle = "#f0e6d2";
-            ctx.font = "italic 22px sans-serif";
-            ctx.fillText(finalMonsterResult.phrase, 50, 770);
+            ctx.fillText(finalMonsterResult.name, 180, 675);
 
+            // 變身耗時 (即時計算秒數)
+            ctx.fillStyle = "#ff7300";
+            ctx.font = "bold 24px sans-serif";
+            ctx.fillText("變身耗時：", 50, 720);
+            ctx.fillStyle = "#ffff00";
+            ctx.font = "bold 26px monospace";
+            ctx.fillText(`${currentElapsedSeconds} 秒`, 180, 720);
+
+            // 怪獸簡介
+            ctx.fillStyle = "#ff7300";
+            ctx.font = "bold 24px sans-serif";
+            ctx.fillText("怪獸簡介：", 50, 765);
+            ctx.fillStyle = "#f0e6d2";
+            ctx.font = "italic 21px sans-serif";
+            ctx.fillText(finalMonsterResult.phrase, 50, 805);
+
+            // 底部活動文字
             ctx.fillStyle = "#8a2be2";
             ctx.font = "18px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("萬聖節特別企劃 — 內心怪獸測驗", 300, 850);
+            ctx.fillText("萬聖節特別企劃 — 內心怪獸測驗", 300, 875);
 
             const link = document.createElement('a');
             link.download = `${currentUserName}-內心怪獸-${finalMonsterResult.name}.png`;
