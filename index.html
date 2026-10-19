@@ -852,90 +852,105 @@
         });
 
         // 選擇下載卡片：導出包含純數字「嚇人指數」的 PNG
-        downloadBtn.addEventListener("click", () => {
-            if (!finalMonsterResult) return;
+        downloadBtn.addEventListener("click", async () => {
+    if (!finalMonsterResult) return;
 
-            const exportCanvas = document.getElementById('export-canvas');
-            const ctx = exportCanvas.getContext('2d');
-            
-            exportCanvas.width = 600;
-            exportCanvas.height = 920;
+    const exportCanvas = document.getElementById('export-canvas');
+    const ctx = exportCanvas.getContext('2d');
+    
+    exportCanvas.width = 600;
+    exportCanvas.height = 920;
 
-            // 背景底色
-            ctx.fillStyle = "#190f26";
-            ctx.fillRect(0, 0, 600, 920);
+    // 1. 繪製卡片底色與內容
+    ctx.fillStyle = "#190f26";
+    ctx.fillRect(0, 0, 600, 920);
 
-            // 外框
-            ctx.strokeStyle = "#ff7300";
-            ctx.lineWidth = 10;
-            ctx.strokeRect(15, 15, 570, 890);
+    ctx.strokeStyle = "#ff7300";
+    ctx.lineWidth = 10;
+    ctx.strokeRect(15, 15, 570, 890);
 
-            // 標題
-            ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 34px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("🎃 萬聖節怪獸變身卡 🎃", 300, 65);
+    ctx.fillStyle = "#ff7300";
+    ctx.font = "bold 34px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("🎃 萬聖節內心怪獸卡 🎃", 300, 65);
 
-            // 怪獸圖片
-            const imgContainer = document.querySelector('#monster-image-box img');
-            if (imgContainer && imgContainer.complete) {
-                ctx.drawImage(imgContainer, 50, 90, 500, 500);
-            } else {
-                ctx.fillStyle = "#000000";
-                ctx.fillRect(50, 90, 500, 500);
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "100px sans-serif";
-                ctx.fillText("🎃", 300, 370);
+    const imgContainer = document.querySelector('#monster-image-box img');
+    if (imgContainer && imgContainer.complete) {
+        ctx.drawImage(imgContainer, 50, 90, 500, 500);
+    } else {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(50, 90, 500, 500);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "100px sans-serif";
+        ctx.fillText("🎃", 300, 370);
+    }
+    ctx.strokeStyle = "#8a2be2";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(50, 90, 500, 500);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ff7300";
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText("怪獸宿主：", 50, 630);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "24px sans-serif";
+    ctx.fillText(currentUserName, 180, 630);
+
+    ctx.fillStyle = "#ff7300";
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText("內心怪獸：", 50, 675);
+    ctx.fillStyle = "#ff9d00";
+    ctx.font = "bold 26px sans-serif";
+    ctx.fillText(finalMonsterResult.name, 180, 675);
+
+    ctx.fillStyle = "#ff7300";
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText("嚇人指數：", 50, 720);
+    ctx.fillStyle = "#ffff00";
+    ctx.font = "bold 28px monospace";
+    ctx.fillText(`${finalScareScore}`, 180, 720);
+
+    ctx.fillStyle = "#ff7300";
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText("怪獸簡介：", 50, 765);
+    ctx.fillStyle = "#f0e6d2";
+    ctx.font = "italic 21px sans-serif";
+    ctx.fillText(finalMonsterResult.phrase, 50, 805);
+
+    ctx.fillStyle = "#8a2be2";
+    ctx.font = "18px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("萬聖節特別企劃 — 內心怪獸測驗", 300, 875);
+
+    // 2. 判斷是否為行動裝置，優先喚起原生相簿儲存面板
+    exportCanvas.toBlob(async (blob) => {
+        const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}.png`;
+        const file = new File([blob], fileName, { type: "image/png" });
+
+        // 如果手機支援 Web Share API 檔案分享
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: '你的內心怪獸卡',
+                    text: '快來看看我的萬聖節內心怪獸！'
+                });
+                return; // 成功呼叫分享面板（iPhone 點「儲存影像」即可存進相簿）
+            } catch (err) {
+                // 使用者自行按取消分享，不報錯
+                if (err.name !== 'AbortError') {
+                    console.log("分享失敗，改用備援方案:", err);
+                }
             }
-            ctx.strokeStyle = "#8a2be2";
-            ctx.lineWidth = 4;
-            ctx.strokeRect(50, 90, 500, 500);
+        }
 
-            ctx.textAlign = "left";
-            
-            // 宿主名字
-            ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 24px sans-serif";
-            ctx.fillText("怪獸宿主：", 50, 630);
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "24px sans-serif";
-            ctx.fillText(currentUserName, 180, 630);
-
-            // 內心怪獸
-            ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 24px sans-serif";
-            ctx.fillText("內心怪獸：", 50, 675);
-            ctx.fillStyle = "#ff9d00";
-            ctx.font = "bold 26px sans-serif";
-            ctx.fillText(finalMonsterResult.name, 180, 675);
-
-            // 嚇人指數 (直接印出純數字)
-            ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 24px sans-serif";
-            ctx.fillText("嚇人指數：", 50, 720);
-            ctx.fillStyle = "#ffff00";
-            ctx.font = "bold 28px monospace";
-            ctx.fillText(`${finalScareScore}`, 180, 720);
-
-            // 怪獸簡介
-            ctx.fillStyle = "#ff7300";
-            ctx.font = "bold 24px sans-serif";
-            ctx.fillText("怪獸簡介：", 50, 765);
-            ctx.fillStyle = "#f0e6d2";
-            ctx.font = "italic 21px sans-serif";
-            ctx.fillText(finalMonsterResult.phrase, 50, 805);
-
-            // 底部活動字樣
-            ctx.fillStyle = "#8a2be2";
-            ctx.font = "18px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("萬聖節特別企劃 — 百 GO 怪獸變身", 300, 875);
-
-            const link = document.createElement('a');
-            link.download = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
-            link.href = exportCanvas.toDataURL('image/png');
-            link.click();
-        });
+        // 3. 備援方案：電腦端或未支援分享的瀏覽器直接觸發傳統下載
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+    }, 'image/png');
+});
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initCamera);
