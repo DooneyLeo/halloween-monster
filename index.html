@@ -45,7 +45,7 @@
             position: relative;
         }
         
-        /* 相機畫面區：佔比約 76~80vh */
+        /* 1. 相機畫面區：佔比約 76~80vh */
         #cam-box {
             position: relative;
             width: 100%;
@@ -64,7 +64,7 @@
             transform: scaleX(-1);
         }
 
-        /* 連點掃描互動覆蓋層（只在鏡頭內點擊有效） */
+        /* 5秒連點集氣互動層（僅在鏡頭框內點擊有效） */
         #scan-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -95,7 +95,6 @@
             100% { top: 95%; }
         }
 
-        /* 5秒倒數與連點計次面板 */
         #energy-panel {
             width: 90%;
             display: flex;
@@ -160,7 +159,7 @@
             pointer-events: none;
         }
 
-        /* 下方控制區：輸入框與按鈕水平並列 */
+        /* 2. 下方控制區：輸入框與按鈕水平並列 */
         .controls-row {
             width: 100%;
             display: flex;
@@ -301,6 +300,7 @@
             display: flex;
         }
 
+        /* 怪獸卡片本體 */
         .monster-card {
             width: 100%;
             background: var(--card-bg);
@@ -323,21 +323,10 @@
         }
 
         @keyframes cardPopFlip {
-            0% {
-                transform: scale(0.1) rotateY(0deg) rotateX(20deg);
-                opacity: 0;
-            }
-            60% {
-                transform: scale(1.08) rotateY(540deg) rotateX(0deg);
-                opacity: 1;
-            }
-            85% {
-                transform: scale(0.96) rotateY(720deg);
-            }
-            100% {
-                transform: scale(1) rotateY(720deg);
-                opacity: 1;
-            }
+            0% { transform: scale(0.1) rotateY(0deg) rotateX(20deg); opacity: 0; }
+            60% { transform: scale(1.08) rotateY(540deg) rotateX(0deg); opacity: 1; }
+            85% { transform: scale(0.96) rotateY(720deg); }
+            100% { transform: scale(1) rotateY(720deg); opacity: 1; }
         }
 
         .monster-image-container {
@@ -449,7 +438,7 @@
     <div id="message-box"></div>
     
     <div id="stage-container">
-        <!-- 相機畫面置中區 -->
+        <!-- 相機畫面區 -->
         <div id="cam-box">
             <video id="webcam" autoplay playsinline muted></video>
             
@@ -469,13 +458,13 @@
             <div id="status-text">相機初始化中...</div>
         </div>
 
-        <!-- 下方控制列：名字輸入與掃描按鈕水平並列 -->
+        <!-- 下方控制列 -->
         <div class="controls-row" id="controls-row">
             <input type="text" id="user-name-input" placeholder="✍️ 輸入怪獸宿主名字" maxlength="15" autocomplete="off">
             <button id="scan-btn" class="btn" disabled>🔮 開始注入能量</button>
         </div>
 
-        <!-- 結果頁面：直式合成卡片與控制按鈕 -->
+        <!-- 結果頁面 -->
         <div id="result-box">
             <div class="monster-card" id="monster-card">
                 <div class="monster-image-container" id="monster-image-box"></div>
@@ -620,7 +609,7 @@
                 currentAudio = new Audio(monster.soundUrl);
                 currentAudio.volume = 0.9;
                 currentAudio.play().catch(err => {
-                    console.log("音訊播放被瀏覽器阻擋或找不到檔案:", err);
+                    console.log("音訊播放受限或找不到檔案:", err);
                 });
             } catch (e) {
                 console.error("播放音效失敗:", e);
@@ -731,14 +720,12 @@
             }
         }
 
-        // 點擊「開始注入能量」：彈出說明視窗
         scanBtn.addEventListener("click", () => {
             currentUserName = userNameInput.value.trim();
             if (!currentUserName || isChallenging || !isCameraReady) return;
             rulesModal.classList.add("show");
         });
 
-        // 點擊彈窗的「開始挑戰」按鈕：啟動 5 秒倒數與連點
         modalStartBtn.addEventListener("click", () => {
             rulesModal.classList.remove("show");
             startEnergyChallenge();
@@ -769,7 +756,6 @@
             }, 60);
         }
 
-        // 監聽鏡頭內的連點事件
         scanOverlay.addEventListener("pointerdown", (e) => {
             if (!isChallenging) return;
             e.preventDefault();
@@ -781,11 +767,9 @@
             setTimeout(() => { tapCountText.style.transform = 'scale(1)'; }, 60);
         });
 
-        // 5秒結束：點幾下就是多少嚇人指數
         function finishChallenge() {
             scanOverlay.classList.remove('active');
 
-            // 嚇人指數 = 點擊次數
             finalScareScore = tapCount;
 
             const randomIndex = Math.floor(Math.random() * MONSTERS.length);
@@ -793,16 +777,13 @@
 
             camBox.style.display = 'none';
 
-            // 顯示卡片資訊（嚇人指數直接傳入數值）
             showResultCard(finalMonsterResult, currentUserName, finalScareScore);
 
             resultBox.classList.add('show');
             monsterCard.classList.add('animate-pop-flip');
 
-            // 播放 MP3 配音
             playMonsterMp3(finalMonsterResult);
 
-            // 南瓜王綵帶彩蛋
             if (finalMonsterResult.id === 'pumpkin') {
                 setTimeout(triggerConfetti, 300);
             }
@@ -833,7 +814,6 @@
             document.getElementById('res-monster-desc').innerText = monster.phrase;
         }
 
-        // 不存檔 / 重置設施
         resetBtn.addEventListener("click", () => {
             if (currentAudio) {
                 currentAudio.pause();
@@ -851,125 +831,242 @@
             updateScanBtnState();
         });
 
-        // 📸 下載按鈕：電腦端直接下載檔案，手機端（iPhone / Android）呼叫原生相簿儲存
-downloadBtn.addEventListener("click", () => {
-    if (!finalMonsterResult) return;
-
-    const exportCanvas = document.getElementById('export-canvas');
-    const ctx = exportCanvas.getContext('2d');
-    
-    exportCanvas.width = 600;
-    exportCanvas.height = 920;
-
-    // 1. 繪製卡片底色與外框
-    ctx.fillStyle = "#190f26";
-    ctx.fillRect(0, 0, 600, 920);
-
-    ctx.strokeStyle = "#ff7300";
-    ctx.lineWidth = 10;
-    ctx.strokeRect(15, 15, 570, 890);
-
-    // 2. 繪製文字與圖片
-    ctx.fillStyle = "#ff7300";
-    ctx.font = "bold 34px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🎃 萬聖節內心怪獸卡 🎃", 300, 65);
-
-    const imgContainer = document.querySelector('#monster-image-box img');
-    if (imgContainer && imgContainer.complete) {
-        ctx.drawImage(imgContainer, 50, 90, 500, 500);
-    } else {
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(50, 90, 500, 500);
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "100px sans-serif";
-        ctx.fillText("🎃", 300, 370);
-    }
-    ctx.strokeStyle = "#8a2be2";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(50, 90, 500, 500);
-
-    ctx.textAlign = "left";
-    
-    // 宿主名字
-    ctx.fillStyle = "#ff7300";
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillText("怪獸宿主：", 50, 630);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "24px sans-serif";
-    ctx.fillText(currentUserName, 180, 630);
-
-    // 內心怪獸
-    ctx.fillStyle = "#ff7300";
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillText("內心怪獸：", 50, 675);
-    ctx.fillStyle = "#ff9d00";
-    ctx.font = "bold 26px sans-serif";
-    ctx.fillText(finalMonsterResult.name, 180, 675);
-
-    // 嚇人指數
-    ctx.fillStyle = "#ff7300";
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillText("嚇人指數：", 50, 720);
-    ctx.fillStyle = "#ffff00";
-    ctx.font = "bold 28px monospace";
-    ctx.fillText(`${finalScareScore}`, 180, 720);
-
-    // 怪獸簡介
-    ctx.fillStyle = "#ff7300";
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillText("怪獸簡介：", 50, 765);
-    ctx.fillStyle = "#f0e6d2";
-    ctx.font = "italic 21px sans-serif";
-    ctx.fillText(finalMonsterResult.phrase, 50, 805);
-
-    // 底部文字
-    ctx.fillStyle = "#8a2be2";
-    ctx.font = "18px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("萬聖節特別企劃 — 內心怪獸測驗", 300, 875);
-
-    // 3. 判斷使用者裝置類型
-    const userAgent = navigator.userAgent || '';
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent) || 
-                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // 包含 iPadOS
-
-    const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
-
-    // 🖥️ 電腦端：直接維持傳統下載方式
-    if (!isMobile) {
-        const link = document.createElement('a');
-        link.download = fileName;
-        link.href = exportCanvas.toDataURL('image/png');
-        link.click();
-        return;
-    }
-
-    // 📱 手機端（iPhone / Android）：呼叫原生分享以存進相簿
-    exportCanvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const file = new File([blob], fileName, { type: "image/png" });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: '你的內心怪獸卡',
-                    text: '快來看看我的萬聖節內心怪獸！'
-                });
-                return;
-            } catch (err) {
-                if (err.name === 'AbortError') return; // 使用者按取消不動作
-            }
+        // 圓角矩形繪製輔助工具
+        function drawRoundedRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
         }
 
-        // 手機若不支援 Web Share API 的降級備援
-        const link = document.createElement('a');
-        link.download = fileName;
-        link.href = URL.createObjectURL(blob);
-        link.click();
-    }, 'image/png');
-});
+        // Canvas 專用 object-fit: cover 裁切繪圖工具（避免照片變形）
+        function drawImageProp(ctx, img, x, y, w, h) {
+            const nw = img.naturalWidth || img.width;
+            const nh = img.naturalHeight || img.height;
+            const imgRatio = nw / nh;
+            const boxRatio = w / h;
+            let sx = 0, sy = 0, sw = nw, sh = nh;
+            if (imgRatio > boxRatio) {
+                sw = nh * boxRatio;
+                sx = (nw - sw) / 2;
+            } else {
+                sh = nw / boxRatio;
+                sy = (nh - sh) / 2;
+            }
+            ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+        }
+
+        // 📸 核心下載：等比例抓取網頁卡片尺寸，電腦直接靜默儲存、手機存相簿
+        downloadBtn.addEventListener("click", () => {
+            if (!finalMonsterResult) return;
+
+            const cardEl = document.getElementById('monster-card');
+            const cardW = cardEl.offsetWidth;
+            const cardH = cardEl.offsetHeight;
+
+            const exportCanvas = document.getElementById('export-canvas');
+            const ctx = exportCanvas.getContext('2d');
+            
+            // 🎯 等比例放大 2 倍繪製，解析度更高且長寬比 100% 吻合網頁呈現
+            const scale = 2;
+            const exportWidth = Math.round(cardW * scale);
+            const exportHeight = Math.round(cardH * scale);
+
+            exportCanvas.width = exportWidth;
+            exportCanvas.height = exportHeight;
+
+            // 1. 卡片底色
+            ctx.fillStyle = "#190f26";
+            ctx.fillRect(0, 0, exportWidth, exportHeight);
+
+            // 2. 外框（等比例圓角）
+            const borderWidth = 3 * scale;
+            const borderRadius = 20 * scale;
+            ctx.strokeStyle = "#ff7300";
+            ctx.lineWidth = borderWidth;
+            drawRoundedRect(ctx, borderWidth / 2, borderWidth / 2, exportWidth - borderWidth, exportHeight - borderWidth, borderRadius);
+            ctx.stroke();
+
+            // 3. 繪製正方形照片區域
+            const pad = 20 * scale;
+            const imgBoxSize = exportWidth - (pad * 2);
+            const imgX = pad;
+            const imgY = pad;
+            const imgRadius = 12 * scale;
+            const borderColor = finalMonsterResult.bgColor || "#8a2be2";
+
+            // 底色與圓角裁切（實現 object-fit: cover）
+            ctx.save();
+            drawRoundedRect(ctx, imgX, imgY, imgBoxSize, imgBoxSize, imgRadius);
+            ctx.fillStyle = "#000000";
+            ctx.fill();
+            ctx.clip();
+
+            const imgEl = document.querySelector('#monster-image-box img');
+            if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
+                drawImageProp(ctx, imgEl, imgX, imgY, imgBoxSize, imgBoxSize);
+            } else {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `${80 * scale}px sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("🎃", imgX + imgBoxSize / 2, imgY + imgBoxSize / 2);
+            }
+            ctx.restore();
+
+            // 照片邊框
+            ctx.save();
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2 * scale;
+            drawRoundedRect(ctx, imgX, imgY, imgBoxSize, imgBoxSize, imgRadius);
+            ctx.stroke();
+            ctx.restore();
+
+            // 4. 文字資訊排版（精確對齊網頁樣式）
+            let currentY = imgY + imgBoxSize + (16 * scale);
+            const rowGap = 10 * scale;
+            const fontLabelSize = Math.round(17.5 * scale);
+
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+
+            // 怪獸宿主
+            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.fillStyle = "#ff7300";
+            ctx.fillText("怪獸宿主：", imgX, currentY);
+            let labelWidth = ctx.measureText("怪獸宿主：").width;
+            ctx.font = `bold ${Math.round(19 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(currentUserName, imgX + labelWidth, currentY - (1 * scale));
+
+            currentY += Math.round(19 * scale) + rowGap;
+
+            // 內心怪獸
+            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.fillStyle = "#ff7300";
+            ctx.fillText("內心怪獸：", imgX, currentY);
+            labelWidth = ctx.measureText("內心怪獸：").width;
+            ctx.font = `bold ${Math.round(20 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.fillStyle = "#ff9d00";
+            ctx.fillText(finalMonsterResult.name, imgX + labelWidth, currentY - (1 * scale));
+
+            currentY += Math.round(20 * scale) + rowGap;
+
+            // 嚇人指數
+            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.fillStyle = "#ff7300";
+            ctx.fillText("嚇人指數：", imgX, currentY);
+            labelWidth = ctx.measureText("嚇人指數：").width;
+            ctx.font = `bold ${Math.round(22 * scale)}px monospace`;
+            ctx.fillStyle = "#ffff00";
+            ctx.fillText(`${finalScareScore}`, imgX + labelWidth, currentY - (2 * scale));
+
+            currentY += Math.round(22 * scale) + rowGap;
+
+            // 怪獸簡介標題
+            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.fillStyle = "#ff7300";
+            ctx.fillText("怪獸簡介：", imgX, currentY);
+            currentY += fontLabelSize + (6 * scale);
+
+            // 怪獸簡介內容（左側紫線條與斜體）
+            const phrase = finalMonsterResult.phrase;
+            const phraseFontSize = Math.round(16 * scale);
+            ctx.font = `italic ${phraseFontSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.fillStyle = "#f0e6d2";
+
+            const maxTextW = imgBoxSize - (16 * scale);
+            const chars = phrase.split('');
+            let line = '';
+            const lines = [];
+            for (let n = 0; n < chars.length; n++) {
+                const testLine = line + chars[n];
+                if (ctx.measureText(testLine).width > maxTextW && n > 0) {
+                    lines.push(line);
+                    line = chars[n];
+                } else {
+                    line = testLine;
+                }
+            }
+            lines.push(line);
+
+            const lineHeight = phraseFontSize * 1.45;
+            const blockHeight = lines.length * lineHeight;
+
+            // 左側紫條
+            ctx.strokeStyle = "#8a2be2";
+            ctx.lineWidth = 3 * scale;
+            ctx.beginPath();
+            ctx.moveTo(imgX + (2 * scale), currentY);
+            ctx.lineTo(imgX + (2 * scale), currentY + blockHeight);
+            ctx.stroke();
+
+            // 繪製文字
+            lines.forEach((l, idx) => {
+                ctx.fillText(l, imgX + (12 * scale), currentY + (idx * lineHeight));
+            });
+
+            // 5. 輸出邏輯判定
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+            const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
+
+            // 🖥️ 電腦端：使用 Blob 搭配虛擬連結直接靜默下載，絕不喚醒任何系統分享對話框
+            if (!isMobile) {
+                exportCanvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 200);
+                }, 'image/png');
+                return;
+            }
+
+            // 📱 手機端：喚起原生儲存影像面板以存入相簿
+            exportCanvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const file = new File([blob], fileName, { type: "image/png" });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: '你的內心怪獸卡',
+                            text: '快來看看我的萬聖節內心怪獸！'
+                        });
+                        return;
+                    } catch (err) {
+                        if (err.name === 'AbortError') return;
+                    }
+                }
+
+                // 手機備援
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 200);
+            }, 'image/png');
+        });
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initCamera);
