@@ -1005,19 +1005,19 @@
             updateScanBtnState();
         });
 
-        /* 📐 修正後的標準四角圓角矩形繪圖函式（徹底解決右側線條扭曲與斷裂） */
+        /* 📐 標準圓角矩形繪圖函式（使用 W3C 標準 arcTo 演算法與原生 roundRect，保證右側平整無缺口） */
         function drawRoundedRect(ctx, x, y, width, height, radius) {
             ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.lineTo(x + width - radius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-            ctx.lineTo(x + width, y + height - radius);
-            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-            ctx.lineTo(x + radius, y + height);
-            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-            ctx.lineTo(x, y + radius);
-            ctx.quadraticCurveTo(x, y, x + radius, y);
-            ctx.closePath();
+            if (typeof ctx.roundRect === 'function') {
+                ctx.roundRect(x, y, width, height, radius);
+            } else {
+                ctx.moveTo(x + radius, y);
+                ctx.arcTo(x + width, y, x + width, y + height, radius);
+                ctx.arcTo(x + width, y + height, x, y + height, radius);
+                ctx.arcTo(x, y + height, x, y, radius);
+                ctx.arcTo(x, y, x + width, y, radius);
+                ctx.closePath();
+            }
         }
 
         function drawImageProp(ctx, img, x, y, w, h) {
@@ -1036,7 +1036,7 @@
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         }
 
-        /* 📸 下載直式長方形卡片：右側完整平整閉合，文字中央對齊徽章 */
+        /* 📸 下載直式長方形卡片：右側完整閉合，線條平整不中斷 */
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -1049,11 +1049,15 @@
             exportCanvas.width = exportWidth;
             exportCanvas.height = exportHeight;
 
+            // 確保所有筆刷轉角接縫圓滑連貫
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+
             // 1. 卡片底色
             ctx.fillStyle = "#190f26";
             ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-            // 2. 圓角外框（平整邊界）
+            // 2. 圓角外框（四周完全閉合平整）
             const borderWidth = 6;
             const borderRadius = 22;
             ctx.strokeStyle = "#ff7300";
@@ -1102,7 +1106,7 @@
             ctx.stroke();
             ctx.restore();
 
-            // 5. 底部右側：能力值徽章 (安全對齊右側，保留 36px 邊距)
+            // 5. 底部右側：能力值徽章 (右側留有 36px 邊界，線條乾淨平直)
             const badgeW = 144;
             const badgeH = 236;
             const badgeX = exportWidth - 36 - badgeW; // 420
