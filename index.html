@@ -30,30 +30,43 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 6px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
+            justify-content: space-between;
+            padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
             touch-action: manipulation;
         }
         
         h1 {
             color: var(--primary-color);
             text-shadow: 0 0 12px rgba(255, 115, 0, 0.6);
-            margin: 2px 0 6px 0;
+            margin: 0 0 6px 0;
             text-align: center;
-            font-size: 1.35rem;
+            font-size: 1.4rem;
             flex-shrink: 0;
         }
         
         #stage-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 440px;
             flex: 1;
             min-height: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
             perspective: 1000px;
             position: relative;
+        }
+
+        /* 🖥️ 電腦版適配：加寬舞台，讓卡片與相機在桌機呈現大畫面氣勢 */
+        @media (min-width: 768px) {
+            #stage-container {
+                max-width: 500px;
+            }
+            h1 {
+                font-size: 1.7rem;
+                margin-bottom: 8px;
+            }
         }
         
         /* 1. 相機畫面區：自動填滿垂直剩餘空間 */
@@ -64,7 +77,7 @@
             min-height: 0;
             background: #000;
             border: 3px solid var(--secondary-color);
-            border-radius: 16px;
+            border-radius: 18px;
             overflow: hidden;
             box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
             user-select: none;
@@ -76,7 +89,7 @@
             transform: scaleX(-1);
         }
 
-        /* 5秒連點集氣互動層 */
+        /* 7秒連點集氣互動層 */
         #scan-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -116,7 +129,7 @@
             pointer-events: none;
         }
         .timer-display {
-            font-size: 3rem;
+            font-size: 3.2rem;
             font-weight: 900;
             color: #ff3333;
             text-shadow: 0 0 20px rgba(255, 51, 51, 0.8), 0 0 5px #000;
@@ -126,7 +139,7 @@
         .tap-counter-box {
             background: rgba(0, 0, 0, 0.75);
             border: 2px solid var(--primary-color);
-            padding: 8px 20px;
+            padding: 8px 22px;
             border-radius: 16px;
             box-shadow: 0 0 15px rgba(255, 115, 0, 0.5);
             display: flex;
@@ -171,7 +184,7 @@
             pointer-events: none;
         }
 
-        /* 2. 下方控制區 */
+        /* 下方控制區 */
         .controls-row {
             width: 100%;
             display: flex;
@@ -204,7 +217,7 @@
             background: linear-gradient(135deg, var(--primary-color), #d05000);
             color: #fff;
             border: none;
-            padding: 10px 16px;
+            padding: 10px 18px;
             font-size: 0.95rem;
             font-weight: bold;
             border-radius: 25px;
@@ -303,11 +316,10 @@
             margin-top: 4px;
         }
 
-        /* 3. 結果容器 */
+        /* 結果容器 */
         #result-box {
             display: none;
             width: 100%;
-            height: 100%;
             flex: 1;
             min-height: 0;
             flex-direction: column;
@@ -318,20 +330,22 @@
             display: flex;
         }
 
+        /* 🎃 怪獸卡片本體：鎖定圖片佔 7 成、文字佔 3 成結構 */
         .monster-card {
             width: 100%;
+            flex: 1;
+            min-height: 0;
             background: var(--card-bg);
             border: 3px solid var(--primary-color);
-            border-radius: 16px;
-            padding: 14px 16px;
+            border-radius: 18px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            justify-content: space-between;
             box-shadow: 0 0 25px rgba(255, 115, 0, 0.4);
             transform-style: preserve-3d;
             backface-visibility: hidden;
             opacity: 0;
-            overflow: hidden;
             position: relative;
             box-sizing: border-box;
         }
@@ -347,14 +361,16 @@
             100% { transform: scale(1) rotateY(720deg); opacity: 1; }
         }
 
+        /* 🖼️ 圖片區域：精準佔比 7 成 (flex: 70 1 0)，寬度滿版，電腦上看大氣搶眼 */
         .monster-image-container {
             width: 100%;
-            aspect-ratio: 1/1;
+            flex: 70 1 0;
+            min-height: 0;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             border: 2px solid var(--secondary-color);
             overflow: hidden;
             background: #000;
@@ -369,18 +385,27 @@
             line-height: 1;
         }
 
+        /* ✍️ 文字資訊區：佔比約 3 成 (flex: 30 0 auto)，配置於圖片正下方 */
         .card-info-list {
             width: 100%;
+            flex: 30 0 auto;
+            min-height: 0;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            justify-content: space-evenly;
+            gap: 2px;
             text-align: left;
         }
         .card-info-row {
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             color: #ddd;
-            line-height: 1.35;
+            line-height: 1.25;
             word-break: break-word;
+        }
+        @media (min-width: 768px) {
+            .card-info-row {
+                font-size: 0.96rem;
+            }
         }
         .card-info-row strong {
             color: var(--primary-color);
@@ -388,27 +413,33 @@
         .highlight-name {
             color: #fff;
             font-weight: bold;
-            font-size: 1.05rem;
+            font-size: 1rem;
         }
         .highlight-monster {
             color: #ff9d00;
             font-weight: bold;
-            font-size: 1.15rem;
+            font-size: 1.05rem;
         }
         .highlight-scare {
             color: #ffff00;
             font-weight: bold;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             text-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
             font-family: monospace;
         }
         .desc-text {
             font-style: italic;
             color: #f0e6d2;
-            margin-top: 3px;
-            padding-left: 8px;
+            margin-top: 1px;
+            padding-left: 6px;
             border-left: 3px solid var(--secondary-color);
-            font-size: 0.9rem;
+            font-size: 0.82rem;
+            line-height: 1.2;
+        }
+        @media (min-width: 768px) {
+            .desc-text {
+                font-size: 0.9rem;
+            }
         }
 
         .button-group {
@@ -473,7 +504,7 @@
             <div id="scan-overlay">
                 <div class="scan-line"></div>
                 <div id="energy-panel">
-                    <div class="timer-display" id="timer-display">5.0s</div>
+                    <div class="timer-display" id="timer-display">7.0s</div>
                     <div class="tap-counter-box">
                         <div class="tap-counter-title" id="tap-counter-title">⚡ 準備連點！</div>
                         <div class="tap-count-text" id="tap-count-text">0</div>
@@ -525,7 +556,7 @@
         <div class="modal-content">
             <h3 class="modal-title">⚡ 怪獸能量挑戰說明 ⚡</h3>
             <ul class="modal-list">
-                <li>限時 <strong>5 秒</strong>！</li>
+                <li>限時 <strong>7 秒</strong>！</li>
                 <li id="rule-interaction-hint">操作方式準備中...</li>
             </ul>
             <button id="modal-start-btn" class="btn modal-btn-start">😈 開始挑戰！</button>
@@ -606,7 +637,6 @@
 
         let currentAudio = null;
 
-        // 偵測是否為手機/平板行動裝置
         const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || 
                                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -632,7 +662,6 @@
         const messageBox = document.getElementById("message-box");
         const confettiCanvas = document.getElementById("confetti-canvas");
 
-        // 依據裝置設定說明與提示文字
         if (isMobileDevice) {
             ruleInteractionHint.innerHTML = "<strong>連點手機螢幕</strong>來累積能量。";
             tapCounterTitle.innerText = "⚡ 點我！";
@@ -779,13 +808,13 @@
             isChallenging = true;
             tapCount = 0;
             tapCountText.innerText = '0';
-            timerDisplay.innerText = '5.0s';
+            timerDisplay.innerText = '7.0s';
             
             controlsRow.style.display = 'none';
             statusText.innerText = isMobileDevice ? "⚡ 點我！" : "⚡ 按空白鍵！";
             scanOverlay.classList.add('active');
 
-            const totalDuration = 5000;
+            const totalDuration = 7000;
             challengeEndTime = Date.now() + totalDuration;
 
             countdownTimer = setInterval(() => {
@@ -800,7 +829,6 @@
             }, 60);
         }
 
-        // 統一能量累計處理函式
         function registerEnergyTap() {
             if (!isChallenging) return;
             tapCount++;
@@ -810,7 +838,6 @@
             setTimeout(() => { tapCountText.style.transform = 'scale(1)'; }, 60);
         }
 
-        // 📱 手機玩家：在鏡頭框內觸控點擊螢幕
         scanOverlay.addEventListener("pointerdown", (e) => {
             if (isMobileDevice || e.pointerType === 'touch') {
                 e.preventDefault();
@@ -818,11 +845,10 @@
             }
         });
 
-        // 🖥️ 電腦玩家：連按空白鍵 (Space)
         window.addEventListener("keydown", (e) => {
             if (!isChallenging) return;
             if (e.code === "Space") {
-                e.preventDefault(); // 防止空白鍵造成網頁捲動
+                e.preventDefault();
                 registerEnergyTap();
             }
         });
@@ -921,19 +947,16 @@
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         }
 
+        /* 📸 下載直式長方形卡片：維持 7 成照片、3 成文字格局，文字保證 100% 完整 */
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
-
-            const cardEl = document.getElementById('monster-card');
-            const cardW = cardEl.offsetWidth;
-            const cardH = cardEl.offsetHeight;
 
             const exportCanvas = document.getElementById('export-canvas');
             const ctx = exportCanvas.getContext('2d');
             
-            const scale = 2;
-            const exportWidth = Math.round(cardW * scale);
-            const exportHeight = Math.round(cardH * scale);
+            // 🎯 標準長方形卡片尺寸：600 × 900
+            const exportWidth = 600;
+            const exportHeight = 900;
 
             exportCanvas.width = exportWidth;
             exportCanvas.height = exportHeight;
@@ -943,100 +966,108 @@
             ctx.fillRect(0, 0, exportWidth, exportHeight);
 
             // 2. 圓角外框
-            const borderWidth = 3 * scale;
-            const borderRadius = 16 * scale;
+            const borderWidth = 6;
+            const borderRadius = 24;
             ctx.strokeStyle = "#ff7300";
             ctx.lineWidth = borderWidth;
-            drawRoundedRect(ctx, borderWidth / 2, borderWidth / 2, exportWidth - borderWidth, exportHeight - borderWidth, borderRadius);
+            drawRoundedRect(ctx, 16, 16, exportWidth - 32, exportHeight - 32, borderRadius);
             ctx.stroke();
 
-            // 3. 正方形照片區域
-            const padX = 16 * scale;
-            const padY = 14 * scale;
-            const imgBoxSize = exportWidth - (padX * 2);
-            const imgX = padX;
-            const imgY = padY;
-            const imgRadius = 12 * scale;
+            // 3. 卡片頂部標題
+            ctx.fillStyle = "#ff7300";
+            ctx.font = "bold 24px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🎃 萬聖節內心怪獸卡 🎃", exportWidth / 2, 45);
+
+            // 4. 照片區域 (大幅提升佔比至近 65~70%，尺寸 520 × 520)
+            const imgW = 520;
+            const imgH = 510;
+            const imgX = (exportWidth - imgW) / 2;
+            const imgY = 70;
+            const imgRadius = 14;
             const borderColor = finalMonsterResult.bgColor || "#8a2be2";
 
             ctx.save();
-            drawRoundedRect(ctx, imgX, imgY, imgBoxSize, imgBoxSize, imgRadius);
+            drawRoundedRect(ctx, imgX, imgY, imgW, imgH, imgRadius);
             ctx.fillStyle = "#000000";
             ctx.fill();
             ctx.clip();
 
             const imgEl = document.querySelector('#monster-image-box img');
             if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
-                drawImageProp(ctx, imgEl, imgX, imgY, imgBoxSize, imgBoxSize);
+                drawImageProp(ctx, imgEl, imgX, imgY, imgW, imgH);
             } else {
                 ctx.fillStyle = "#ffffff";
-                ctx.font = `${80 * scale}px sans-serif`;
+                ctx.font = "80px sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText("🎃", imgX + imgBoxSize / 2, imgY + imgBoxSize / 2);
+                ctx.fillText("🎃", imgX + imgW / 2, imgY + imgH / 2);
             }
             ctx.restore();
 
+            // 照片邊框
             ctx.save();
             ctx.strokeStyle = borderColor;
-            ctx.lineWidth = 2 * scale;
-            drawRoundedRect(ctx, imgX, imgY, imgBoxSize, imgBoxSize, imgRadius);
+            ctx.lineWidth = 3;
+            drawRoundedRect(ctx, imgX, imgY, imgW, imgH, imgRadius);
             ctx.stroke();
             ctx.restore();
 
-            // 4. 文字資訊排版
-            let currentY = imgY + imgBoxSize + (10 * scale);
-            const rowGap = 7 * scale;
-            const fontLabelSize = Math.round(15 * scale);
+            // 5. 文字排版區 (置於圖片下方，精簡排版保證 100% 裝入不超出)
+            let currentY = 596;
+            const textStartX = 45;
+            const rowGap = 8;
 
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
 
             // 宿主
-            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.font = "bold 20px 'Helvetica Neue', Arial, sans-serif";
             ctx.fillStyle = "#ff7300";
-            ctx.fillText("怪獸宿主：", imgX, currentY);
+            ctx.fillText("怪獸宿主：", textStartX, currentY);
             let labelWidth = ctx.measureText("怪獸宿主：").width;
-            ctx.font = `bold ${Math.round(17 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.font = "bold 22px 'Helvetica Neue', Arial, sans-serif";
             ctx.fillStyle = "#ffffff";
-            ctx.fillText(currentUserName, imgX + labelWidth, currentY - (1 * scale));
+            ctx.fillText(currentUserName, textStartX + labelWidth, currentY - 1);
 
-            currentY += Math.round(17 * scale) + rowGap;
+            currentY += 26 + rowGap;
 
             // 怪獸名稱
-            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.font = "bold 20px 'Helvetica Neue', Arial, sans-serif";
             ctx.fillStyle = "#ff7300";
-            ctx.fillText("內心怪獸：", imgX, currentY);
+            ctx.fillText("內心怪獸：", textStartX, currentY);
             labelWidth = ctx.measureText("內心怪獸：").width;
-            ctx.font = `bold ${Math.round(18 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.font = "bold 24px 'Helvetica Neue', Arial, sans-serif";
             ctx.fillStyle = "#ff9d00";
-            ctx.fillText(finalMonsterResult.name, imgX + labelWidth, currentY - (1 * scale));
+            ctx.fillText(finalMonsterResult.name, textStartX + labelWidth, currentY - 2);
 
-            currentY += Math.round(18 * scale) + rowGap;
+            currentY += 28 + rowGap;
 
             // 嚇人指數
-            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.font = "bold 20px 'Helvetica Neue', Arial, sans-serif";
             ctx.fillStyle = "#ff7300";
-            ctx.fillText("嚇人指數：", imgX, currentY);
+            ctx.fillText("嚇人指數：", textStartX, currentY);
             labelWidth = ctx.measureText("嚇人指數：").width;
-            ctx.font = `bold ${Math.round(20 * scale)}px monospace`;
+            ctx.font = "bold 28px monospace";
             ctx.fillStyle = "#ffff00";
-            ctx.fillText(`${finalScareScore}`, imgX + labelWidth, currentY - (2 * scale));
+            ctx.fillText(`${finalScareScore}`, textStartX + labelWidth, currentY - 4);
 
-            currentY += Math.round(20 * scale) + rowGap;
+            currentY += 32 + rowGap;
 
-            // 怪獸簡介
-            ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
+            // 怪獸簡介標題
+            ctx.font = "bold 20px 'Helvetica Neue', Arial, sans-serif";
             ctx.fillStyle = "#ff7300";
-            ctx.fillText("怪獸簡介：", imgX, currentY);
-            currentY += fontLabelSize + (4 * scale);
+            ctx.fillText("怪獸簡介：", textStartX, currentY);
+            currentY += 26;
 
+            // 簡介多行排版
             const phrase = finalMonsterResult.phrase;
-            const phraseFontSize = Math.round(14.5 * scale);
+            const phraseFontSize = 18;
             ctx.font = `italic ${phraseFontSize}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#f0e6d2";
 
-            const maxTextW = imgBoxSize - (16 * scale);
+            const maxTextW = 490;
             const chars = phrase.split('');
             let line = '';
             const lines = [];
@@ -1051,24 +1082,31 @@
             }
             lines.push(line);
 
-            const lineHeight = phraseFontSize * 1.4;
+            const lineHeight = 25;
             const blockHeight = lines.length * lineHeight;
 
+            // 左側紫裝飾線
             ctx.strokeStyle = "#8a2be2";
-            ctx.lineWidth = 3 * scale;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(imgX + (2 * scale), currentY);
-            ctx.lineTo(imgX + (2 * scale), currentY + blockHeight);
+            ctx.moveTo(textStartX + 2, currentY + 2);
+            ctx.lineTo(textStartX + 2, currentY + blockHeight);
             ctx.stroke();
 
             lines.forEach((l, idx) => {
-                ctx.fillText(l, imgX + (10 * scale), currentY + (idx * lineHeight));
+                ctx.fillText(l, textStartX + 12, currentY + (idx * lineHeight));
             });
 
-            // 5. 輸出邏輯
+            // 底部活動標語
+            ctx.font = "14px sans-serif";
+            ctx.fillStyle = "#8a2be2";
+            ctx.textAlign = "center";
+            ctx.fillText("萬聖節特別企劃 — 內心怪獸變身", exportWidth / 2, 862);
+
+            // 6. 下載輸出
             const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
 
-            // 電腦端直接靜默下載
+            // 電腦端直接下載
             if (!isMobileDevice) {
                 exportCanvas.toBlob((blob) => {
                     if (!blob) return;
@@ -1087,7 +1125,7 @@
                 return;
             }
 
-            // 手機端呼叫原生儲存影像面板
+            // 手機端呼叫原生面板存入相簿
             exportCanvas.toBlob(async (blob) => {
                 if (!blob) return;
                 const file = new File([blob], fileName, { type: "image/png" });
