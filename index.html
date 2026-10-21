@@ -525,11 +525,10 @@
         <div class="modal-content">
             <h3 class="modal-title">⚡ 怪獸能量挑戰說明 ⚡</h3>
             <ul class="modal-list">
-                <li>你將有 <strong>5 秒</strong> 可以狂衝怪獸能量，次數越多，這隻怪獸的嚇人指數就越高！</li>
+                <li>限時 <strong>5 秒</strong>！</li>
                 <li id="rule-interaction-hint">操作方式準備中...</li>
-                <li>測驗結束後可自由選擇是否下載卡片；若點擊「不存檔」，系統<strong>不會進行任何儲存</strong>。</li>
             </ul>
-            <button id="modal-start-btn" class="btn modal-btn-start">😈 我準備好了，開始 5 秒挑戰！</button>
+            <button id="modal-start-btn" class="btn modal-btn-start">😈 開始挑戰！</button>
         </div>
     </div>
 
@@ -635,12 +634,12 @@
 
         // 依據裝置設定說明與提示文字
         if (isMobileDevice) {
-            ruleInteractionHint.innerHTML = "手機玩家請在<strong>攝影機畫面區域內瘋狂連點螢幕</strong>來累積能量。";
-            tapCounterTitle.innerText = "⚡ 鏡頭內瘋狂連點！";
+            ruleInteractionHint.innerHTML = "<strong>連點手機螢幕</strong>來累積能量。";
+            tapCounterTitle.innerText = "⚡ 點我！";
             tapSubhint.innerText = "手指點越快，怪獸嚇人指數越高！🔥";
         } else {
-            ruleInteractionHint.innerHTML = "電腦玩家請<strong>瘋狂連按鍵盤【空白鍵 Space】</strong>來累積能量。";
-            tapCounterTitle.innerText = "⚡ 瘋狂連按【空白鍵 Space】！";
+            ruleInteractionHint.innerHTML = "<strong>連按空白鍵</strong>來累積能量。";
+            tapCounterTitle.innerText = "⚡ 快按空白鍵！";
             tapSubhint.innerText = "空白鍵按越快，怪獸嚇人指數越高！🔥";
         }
 
