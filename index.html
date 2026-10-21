@@ -14,14 +14,14 @@
         }
         * { box-sizing: border-box; }
         
-        /* 📱 滿版免滑動核心設定：精確鎖定動態視區高度 (100dvh) */
+        /* 📱 滿版免滑動設定 (100dvh) */
         html, body {
             width: 100%;
             height: 100%;
             height: 100dvh;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* 禁止全頁捲動 */
+            overflow: hidden;
         }
         body {
             background-color: var(--bg-color);
@@ -47,7 +47,7 @@
             width: 100%;
             max-width: 480px;
             flex: 1;
-            min-height: 0; /* 允許內部 flex 項目縮減高度 */
+            min-height: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -171,7 +171,7 @@
             pointer-events: none;
         }
 
-        /* 2. 下方控制區：緊湊水平並列 */
+        /* 2. 下方控制區 */
         .controls-row {
             width: 100%;
             display: flex;
@@ -303,7 +303,7 @@
             margin-top: 4px;
         }
 
-        /* 3. 結果容器：自動縮放吻合一頁 */
+        /* 3. 結果容器 */
         #result-box {
             display: none;
             width: 100%;
@@ -318,7 +318,6 @@
             display: flex;
         }
 
-        /* 怪獸卡片本體 */
         .monster-card {
             width: 100%;
             background: var(--card-bg);
@@ -412,7 +411,6 @@
             font-size: 0.9rem;
         }
 
-        /* 按鈕並列配置，大幅縮減垂直佔比 */
         .button-group {
             display: flex;
             flex-direction: row;
@@ -477,10 +475,10 @@
                 <div id="energy-panel">
                     <div class="timer-display" id="timer-display">5.0s</div>
                     <div class="tap-counter-box">
-                        <div class="tap-counter-title">⚡ 鏡頭內瘋狂連點！</div>
+                        <div class="tap-counter-title" id="tap-counter-title">⚡ 準備連點！</div>
                         <div class="tap-count-text" id="tap-count-text">0</div>
                     </div>
-                    <div class="tap-subhint">手指點越快，怪獸嚇人指數越高！🔥</div>
+                    <div class="tap-subhint" id="tap-subhint">按越快，怪獸嚇人指數越高！🔥</div>
                 </div>
             </div>
             
@@ -490,7 +488,7 @@
         <!-- 下方控制列 -->
         <div class="controls-row" id="controls-row">
             <input type="text" id="user-name-input" placeholder="✍️ 輸入怪獸宿主名字" maxlength="15" autocomplete="off">
-            <button id="scan-btn" class="btn" disabled>🔮 開始注入能量</button>
+            <button id="scan-btn" class="btn" disabled>🔮 開始</button>
         </div>
 
         <!-- 結果頁面 -->
@@ -517,7 +515,7 @@
 
             <div class="button-group" id="button-group">
                 <button id="download-btn" class="btn">📸 下載卡片</button>
-                <button id="reset-btn" class="btn btn-secondary">🔄 下一位挑戰</button>
+                <button id="reset-btn" class="btn btn-secondary">🔄 再玩一次</button>
             </div>
         </div>
     </div>
@@ -527,8 +525,8 @@
         <div class="modal-content">
             <h3 class="modal-title">⚡ 怪獸能量挑戰說明 ⚡</h3>
             <ul class="modal-list">
-                <li>你將有 <strong>5 秒</strong> 可以狂點注入怪獸能量，點擊越多次，這隻怪獸的嚇人指數就越高！</li>
-                <li>滑鼠或手指必須放在<strong>攝影機鏡頭畫面區域內</strong>連點，才能成功累積次數。</li>
+                <li>你將有 <strong>5 秒</strong> 可以狂衝怪獸能量，次數越多，這隻怪獸的嚇人指數就越高！</li>
+                <li id="rule-interaction-hint">操作方式準備中...</li>
                 <li>測驗結束後可自由選擇是否下載卡片；若點擊「不存檔」，系統<strong>不會進行任何儲存</strong>。</li>
             </ul>
             <button id="modal-start-btn" class="btn modal-btn-start">😈 我準備好了，開始 5 秒挑戰！</button>
@@ -609,6 +607,10 @@
 
         let currentAudio = null;
 
+        // 偵測是否為手機/平板行動裝置
+        const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || 
+                               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
         const video = document.getElementById("webcam");
         const camBox = document.getElementById("cam-box");
         const userNameInput = document.getElementById("user-name-input");
@@ -617,8 +619,11 @@
         const scanOverlay = document.getElementById("scan-overlay");
         const timerDisplay = document.getElementById("timer-display");
         const tapCountText = document.getElementById("tap-count-text");
+        const tapCounterTitle = document.getElementById("tap-counter-title");
+        const tapSubhint = document.getElementById("tap-subhint");
         const statusText = document.getElementById("status-text");
         const rulesModal = document.getElementById("rules-modal");
+        const ruleInteractionHint = document.getElementById("rule-interaction-hint");
         const modalStartBtn = document.getElementById("modal-start-btn");
         const resultBox = document.getElementById("result-box");
         const monsterCard = document.getElementById("monster-card");
@@ -627,6 +632,17 @@
         const downloadBtn = document.getElementById("download-btn");
         const messageBox = document.getElementById("message-box");
         const confettiCanvas = document.getElementById("confetti-canvas");
+
+        // 依據裝置設定說明與提示文字
+        if (isMobileDevice) {
+            ruleInteractionHint.innerHTML = "手機玩家請在<strong>攝影機畫面區域內瘋狂連點螢幕</strong>來累積能量。";
+            tapCounterTitle.innerText = "⚡ 鏡頭內瘋狂連點！";
+            tapSubhint.innerText = "手指點越快，怪獸嚇人指數越高！🔥";
+        } else {
+            ruleInteractionHint.innerHTML = "電腦玩家請<strong>瘋狂連按鍵盤【空白鍵 Space】</strong>來累積能量。";
+            tapCounterTitle.innerText = "⚡ 瘋狂連按【空白鍵 Space】！";
+            tapSubhint.innerText = "空白鍵按越快，怪獸嚇人指數越高！🔥";
+        }
 
         function playMonsterMp3(monster) {
             if (!monster || !monster.soundUrl) return;
@@ -767,7 +783,7 @@
             timerDisplay.innerText = '5.0s';
             
             controlsRow.style.display = 'none';
-            statusText.innerText = "⚡ 請在鏡頭畫面內瘋狂連點！";
+            statusText.innerText = isMobileDevice ? "⚡ 點我！" : "⚡ 按空白鍵！";
             scanOverlay.classList.add('active');
 
             const totalDuration = 5000;
@@ -785,15 +801,31 @@
             }, 60);
         }
 
-        scanOverlay.addEventListener("pointerdown", (e) => {
+        // 統一能量累計處理函式
+        function registerEnergyTap() {
             if (!isChallenging) return;
-            e.preventDefault();
-
             tapCount++;
             tapCountText.innerText = tapCount;
 
             tapCountText.style.transform = 'scale(1.2)';
             setTimeout(() => { tapCountText.style.transform = 'scale(1)'; }, 60);
+        }
+
+        // 📱 手機玩家：在鏡頭框內觸控點擊螢幕
+        scanOverlay.addEventListener("pointerdown", (e) => {
+            if (isMobileDevice || e.pointerType === 'touch') {
+                e.preventDefault();
+                registerEnergyTap();
+            }
+        });
+
+        // 🖥️ 電腦玩家：連按空白鍵 (Space)
+        window.addEventListener("keydown", (e) => {
+            if (!isChallenging) return;
+            if (e.code === "Space") {
+                e.preventDefault(); // 防止空白鍵造成網頁捲動
+                registerEnergyTap();
+            }
         });
 
         function finishChallenge() {
@@ -900,7 +932,6 @@
             const exportCanvas = document.getElementById('export-canvas');
             const ctx = exportCanvas.getContext('2d');
             
-            // 🎯 等比例放大 2 倍繪製，精確反映手機端卡片真實比例
             const scale = 2;
             const exportWidth = Math.round(cardW * scale);
             const exportHeight = Math.round(cardH * scale);
@@ -1035,12 +1066,11 @@
                 ctx.fillText(l, imgX + (10 * scale), currentY + (idx * lineHeight));
             });
 
-            // 5. 輸出邏輯判定
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+            // 5. 輸出邏輯
             const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
 
             // 電腦端直接靜默下載
-            if (!isMobile) {
+            if (!isMobileDevice) {
                 exportCanvas.toBlob((blob) => {
                     if (!blob) return;
                     const url = URL.createObjectURL(blob);
