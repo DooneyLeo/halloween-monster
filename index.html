@@ -396,7 +396,7 @@
             line-height: 1;
         }
 
-        /* 🎮 底部區域：佔 28% 高度，左側垂直置中對齊右側徽章 */
+        /* 🎮 底部區域：佔 28% 高度，兩側垂直置中對齊 */
         .card-bottom-container {
             width: 100%;
             height: 28%;
@@ -404,19 +404,19 @@
             display: flex;
             flex-direction: row;
             justify-content: space-between;
-            align-items: center; /* 讓兩側區塊垂直中心對齊 */
+            align-items: center;
             gap: 12px;
             padding-top: 4px;
             box-sizing: border-box;
         }
 
-        /* 左側：水平對齊右側嚇人指數區塊的中央位置 */
+        /* 左側：水平對齊右側徽章中央 */
         .card-info-left {
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* 垂直置中對齊右側徽章中心 */
+            justify-content: center;
             align-items: flex-start;
             gap: 5px;
             text-align: left;
@@ -738,12 +738,12 @@
         const confettiCanvas = document.getElementById("confetti-canvas");
 
         if (isMobileDevice) {
-            ruleInteractionHint.innerHTML = "<strong>連點手機螢幕</strong>來累積能量。";
+            ruleInteractionHint.innerHTML = "<strong>連點手機螢幕</strong>來累積能量";
             tapCounterTitle.innerText = "⚡ 點我！";
             tapSubhint.innerText = "手指點越快，怪獸嚇人指數越高！🔥";
         } else {
-            ruleInteractionHint.innerHTML = "<strong>連續按空白鍵</strong>來累積能量";
-            tapCounterTitle.innerText = "⚡ 按空白鍵！";
+            ruleInteractionHint.innerHTML = "<strong>連按空白鍵</strong>來累積能量";
+            tapCounterTitle.innerText = "⚡ 快按空白鍵！";
             tapSubhint.innerText = "敲越快，怪獸嚇人指數越高！🔥";
         }
 
@@ -1005,11 +1005,12 @@
             updateScanBtnState();
         });
 
+        /* 📐 修正後的標準四角圓角矩形繪圖函式（徹底解決右側線條扭曲與斷裂） */
         function drawRoundedRect(ctx, x, y, width, height, radius) {
             ctx.beginPath();
             ctx.moveTo(x + radius, y);
             ctx.lineTo(x + width - radius, y);
-            ctx.quadraticCurveTo(x + width, y + width, x + width, y + radius);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
             ctx.lineTo(x + width, y + height - radius);
             ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
             ctx.lineTo(x + radius, y + height);
@@ -1035,7 +1036,7 @@
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         }
 
-        /* 📸 下載直式長方形卡片：左側文字垂直置中對齊右側徽章中心 */
+        /* 📸 下載直式長方形卡片：右側完整平整閉合，文字中央對齊徽章 */
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -1052,7 +1053,7 @@
             ctx.fillStyle = "#190f26";
             ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-            // 2. 圓角外框
+            // 2. 圓角外框（平整邊界）
             const borderWidth = 6;
             const borderRadius = 22;
             ctx.strokeStyle = "#ff7300";
@@ -1101,11 +1102,11 @@
             ctx.stroke();
             ctx.restore();
 
-            // 5. 底部右側：能力值徽章 (X: 416, Y: 614, W: 150, H: 236)
-            const badgeX = 416;
-            const badgeY = 614;
-            const badgeW = 150;
+            // 5. 底部右側：能力值徽章 (安全對齊右側，保留 36px 邊距)
+            const badgeW = 144;
             const badgeH = 236;
+            const badgeX = exportWidth - 36 - badgeW; // 420
+            const badgeY = 614;
 
             ctx.save();
             ctx.shadowColor = "rgba(255, 115, 0, 0.55)";
@@ -1156,7 +1157,7 @@
 
             const blockHeight = lines.length * lineHeight;
 
-            // 🧮 核心對齊：精確對齊右側能力值徽章的垂直中央高度
+            // 核心對齊：精確對齊右側能力值徽章的垂直中央高度
             const badgeCenterY = badgeY + (badgeH / 2);
             const totalTextHeight = 34 + 38 + blockHeight;
             const hostStartY = Math.round(badgeCenterY - (totalTextHeight / 2));
