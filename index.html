@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>你的內心怪獸 🎃</title>
     <style>
         :root {
@@ -13,48 +13,60 @@
             --card-bg: #190f26;
         }
         * { box-sizing: border-box; }
-        body {
+        
+        /* 📱 滿版免滑動核心設定：精確鎖定動態視區高度 (100dvh) */
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
             margin: 0;
-            padding: 12px 10px;
+            padding: 0;
+            overflow: hidden; /* 禁止全頁捲動 */
+        }
+        body {
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
+            padding: 6px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
             touch-action: manipulation;
         }
+        
         h1 {
             color: var(--primary-color);
             text-shadow: 0 0 12px rgba(255, 115, 0, 0.6);
-            margin: 0 0 10px 0;
+            margin: 2px 0 6px 0;
             text-align: center;
-            font-size: 1.6rem;
+            font-size: 1.35rem;
+            flex-shrink: 0;
         }
         
         #stage-container {
             width: 100%;
-            max-width: 520px;
+            max-width: 480px;
+            flex: 1;
+            min-height: 0; /* 允許內部 flex 項目縮減高度 */
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             perspective: 1000px;
             position: relative;
         }
         
-        /* 1. 相機畫面區：佔比約 76~80vh */
+        /* 1. 相機畫面區：自動填滿垂直剩餘空間 */
         #cam-box {
             position: relative;
             width: 100%;
-            height: 76vh;
+            flex: 1;
+            min-height: 0;
             background: #000;
             border: 3px solid var(--secondary-color);
-            border-radius: 18px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 0 25px rgba(138, 43, 226, 0.4);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
             user-select: none;
         }
         #webcam {
@@ -64,7 +76,7 @@
             transform: scaleX(-1);
         }
 
-        /* 5秒連點集氣互動層（僅在鏡頭框內點擊有效） */
+        /* 5秒連點集氣互動層 */
         #scan-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -100,11 +112,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             pointer-events: none;
         }
         .timer-display {
-            font-size: 3.6rem;
+            font-size: 3rem;
             font-weight: 900;
             color: #ff3333;
             text-shadow: 0 0 20px rgba(255, 51, 51, 0.8), 0 0 5px #000;
@@ -112,23 +124,23 @@
             line-height: 1;
         }
         .tap-counter-box {
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             border: 2px solid var(--primary-color);
-            padding: 10px 24px;
-            border-radius: 20px;
+            padding: 8px 20px;
+            border-radius: 16px;
             box-shadow: 0 0 15px rgba(255, 115, 0, 0.5);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
         }
         .tap-counter-title {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: #fff;
             font-weight: bold;
         }
         .tap-count-text {
-            font-size: 3.2rem;
+            font-size: 2.8rem;
             font-weight: 900;
             color: #ffff00;
             text-shadow: 0 0 15px #ff7300, 0 0 5px #000;
@@ -136,47 +148,48 @@
             line-height: 1;
         }
         .tap-subhint {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             color: #ffcc80;
             background: rgba(0,0,0,0.6);
-            padding: 4px 14px;
-            border-radius: 12px;
+            padding: 3px 12px;
+            border-radius: 10px;
             text-align: center;
             font-weight: bold;
         }
 
         #status-text {
             position: absolute;
-            bottom: 12px;
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.85);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            padding: 4px 14px;
+            border-radius: 18px;
+            font-size: 0.8rem;
             color: var(--primary-color);
             white-space: nowrap;
             pointer-events: none;
         }
 
-        /* 2. 下方控制區：輸入框與按鈕水平並列 */
+        /* 2. 下方控制區：緊湊水平並列 */
         .controls-row {
             width: 100%;
             display: flex;
             flex-direction: row;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
         }
         #user-name-input {
             flex: 1;
             min-width: 0;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 25px;
             border: 2px solid var(--secondary-color);
             background: rgba(255, 255, 255, 0.08);
             color: #fff;
-            font-size: 1rem;
+            font-size: 0.95rem;
             text-align: center;
             outline: none;
             transition: all 0.3s ease;
@@ -191,10 +204,10 @@
             background: linear-gradient(135deg, var(--primary-color), #d05000);
             color: #fff;
             border: none;
-            padding: 12px 18px;
-            font-size: 1rem;
+            padding: 10px 16px;
+            font-size: 0.95rem;
             font-weight: bold;
-            border-radius: 30px;
+            border-radius: 25px;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 115, 0, 0.4);
             transition: all 0.2s ease;
@@ -228,7 +241,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            padding: 20px;
+            padding: 16px;
         }
         #rules-modal.show {
             display: flex;
@@ -236,14 +249,14 @@
         .modal-content {
             background: var(--card-bg);
             border: 3px solid var(--primary-color);
-            border-radius: 20px;
-            padding: 24px 20px;
-            max-width: 440px;
+            border-radius: 18px;
+            padding: 20px 16px;
+            max-width: 400px;
             width: 100%;
             box-shadow: 0 0 30px rgba(255, 115, 0, 0.5);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
             animation: modalPop 0.3s ease-out;
         }
         @keyframes modalPop {
@@ -252,7 +265,7 @@
         }
         .modal-title {
             color: var(--primary-color);
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             font-weight: bold;
             text-align: center;
             text-shadow: 0 0 10px rgba(255, 115, 0, 0.5);
@@ -261,10 +274,10 @@
         .modal-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             color: #ddd;
-            font-size: 0.98rem;
-            line-height: 1.5;
+            font-size: 0.9rem;
+            line-height: 1.45;
             text-align: left;
             padding-left: 0;
             list-style: none;
@@ -272,29 +285,34 @@
         }
         .modal-list li {
             position: relative;
-            padding-left: 26px;
+            padding-left: 24px;
         }
         .modal-list li::before {
             content: "🎃";
             position: absolute;
             left: 0;
-            top: 1px;
+            top: 0;
         }
         .modal-list strong {
             color: #ff9d00;
         }
         .modal-btn-start {
             width: 100%;
-            padding: 14px;
-            font-size: 1.15rem;
-            margin-top: 5px;
+            padding: 12px;
+            font-size: 1.05rem;
+            margin-top: 4px;
         }
 
+        /* 3. 結果容器：自動縮放吻合一頁 */
         #result-box {
             display: none;
             width: 100%;
+            height: 100%;
+            flex: 1;
+            min-height: 0;
             flex-direction: column;
             align-items: center;
+            justify-content: space-between;
         }
         #result-box.show {
             display: flex;
@@ -305,17 +323,18 @@
             width: 100%;
             background: var(--card-bg);
             border: 3px solid var(--primary-color);
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            box-shadow: 0 0 35px rgba(255, 115, 0, 0.4);
+            box-shadow: 0 0 25px rgba(255, 115, 0, 0.4);
             transform-style: preserve-3d;
             backface-visibility: hidden;
             opacity: 0;
             overflow: hidden;
             position: relative;
+            box-sizing: border-box;
         }
 
         .monster-card.animate-pop-flip {
@@ -336,7 +355,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
             border: 2px solid var(--secondary-color);
             overflow: hidden;
             background: #000;
@@ -347,7 +366,7 @@
             object-fit: cover;
         }
         .monster-large-emoji {
-            font-size: 100px;
+            font-size: 85px;
             line-height: 1;
         }
 
@@ -355,13 +374,13 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
             text-align: left;
         }
         .card-info-row {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: #ddd;
-            line-height: 1.4;
+            line-height: 1.35;
             word-break: break-word;
         }
         .card-info-row strong {
@@ -370,57 +389,68 @@
         .highlight-name {
             color: #fff;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.05rem;
         }
         .highlight-monster {
             color: #ff9d00;
             font-weight: bold;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
         }
         .highlight-scare {
             color: #ffff00;
             font-weight: bold;
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             text-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
             font-family: monospace;
         }
         .desc-text {
             font-style: italic;
             color: #f0e6d2;
-            margin-top: 4px;
-            padding-left: 10px;
+            margin-top: 3px;
+            padding-left: 8px;
             border-left: 3px solid var(--secondary-color);
+            font-size: 0.9rem;
         }
 
+        /* 按鈕並列配置，大幅縮減垂直佔比 */
         .button-group {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
+            flex-direction: row;
+            gap: 8px;
             width: 100%;
             align-items: center;
-            margin-top: 18px;
+            justify-content: center;
+            margin-top: 6px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.6s ease;
+            flex-shrink: 0;
         }
         .button-group.show {
             opacity: 1;
             pointer-events: auto;
         }
+        .button-group .btn {
+            flex: 1;
+            padding: 10px 6px;
+            font-size: 0.88rem;
+            max-width: none;
+        }
 
         #message-box {
             position: fixed;
-            top: 20px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255, 51, 51, 0.9);
-            padding: 12px 24px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
             color: white;
             font-weight: bold;
             z-index: 100;
             display: none;
             text-align: center;
+            font-size: 0.9rem;
         }
 
         #confetti-canvas {
@@ -442,7 +472,6 @@
         <div id="cam-box">
             <video id="webcam" autoplay playsinline muted></video>
             
-            <!-- 5秒連點集氣互動層 -->
             <div id="scan-overlay">
                 <div class="scan-line"></div>
                 <div id="energy-panel">
@@ -487,8 +516,8 @@
             </div>
 
             <div class="button-group" id="button-group">
-                <button id="download-btn" class="btn" style="width: 100%; max-width: 320px;">📸 下載怪獸結果卡片</button>
-                <button id="reset-btn" class="btn btn-secondary" style="width: 100%; max-width: 320px;">🔄 不存檔 / 下一位挑戰</button>
+                <button id="download-btn" class="btn">📸 下載卡片</button>
+                <button id="reset-btn" class="btn btn-secondary">🔄 下一位挑戰</button>
             </div>
         </div>
     </div>
@@ -831,7 +860,6 @@
             updateScanBtnState();
         });
 
-        // 圓角矩形繪製輔助工具
         function drawRoundedRect(ctx, x, y, width, height, radius) {
             ctx.beginPath();
             ctx.moveTo(x + radius, y);
@@ -846,7 +874,6 @@
             ctx.closePath();
         }
 
-        // Canvas 專用 object-fit: cover 裁切繪圖工具（避免照片變形）
         function drawImageProp(ctx, img, x, y, w, h) {
             const nw = img.naturalWidth || img.width;
             const nh = img.naturalHeight || img.height;
@@ -863,7 +890,6 @@
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         }
 
-        // 📸 核心下載：等比例抓取網頁卡片尺寸，電腦直接靜默儲存、手機存相簿
         downloadBtn.addEventListener("click", () => {
             if (!finalMonsterResult) return;
 
@@ -874,7 +900,7 @@
             const exportCanvas = document.getElementById('export-canvas');
             const ctx = exportCanvas.getContext('2d');
             
-            // 🎯 等比例放大 2 倍繪製，解析度更高且長寬比 100% 吻合網頁呈現
+            // 🎯 等比例放大 2 倍繪製，精確反映手機端卡片真實比例
             const scale = 2;
             const exportWidth = Math.round(cardW * scale);
             const exportHeight = Math.round(cardH * scale);
@@ -886,23 +912,23 @@
             ctx.fillStyle = "#190f26";
             ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-            // 2. 外框（等比例圓角）
+            // 2. 圓角外框
             const borderWidth = 3 * scale;
-            const borderRadius = 20 * scale;
+            const borderRadius = 16 * scale;
             ctx.strokeStyle = "#ff7300";
             ctx.lineWidth = borderWidth;
             drawRoundedRect(ctx, borderWidth / 2, borderWidth / 2, exportWidth - borderWidth, exportHeight - borderWidth, borderRadius);
             ctx.stroke();
 
-            // 3. 繪製正方形照片區域
-            const pad = 20 * scale;
-            const imgBoxSize = exportWidth - (pad * 2);
-            const imgX = pad;
-            const imgY = pad;
+            // 3. 正方形照片區域
+            const padX = 16 * scale;
+            const padY = 14 * scale;
+            const imgBoxSize = exportWidth - (padX * 2);
+            const imgX = padX;
+            const imgY = padY;
             const imgRadius = 12 * scale;
             const borderColor = finalMonsterResult.bgColor || "#8a2be2";
 
-            // 底色與圓角裁切（實現 object-fit: cover）
             ctx.save();
             drawRoundedRect(ctx, imgX, imgY, imgBoxSize, imgBoxSize, imgRadius);
             ctx.fillStyle = "#000000";
@@ -921,7 +947,6 @@
             }
             ctx.restore();
 
-            // 照片邊框
             ctx.save();
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2 * scale;
@@ -929,56 +954,55 @@
             ctx.stroke();
             ctx.restore();
 
-            // 4. 文字資訊排版（精確對齊網頁樣式）
-            let currentY = imgY + imgBoxSize + (16 * scale);
-            const rowGap = 10 * scale;
-            const fontLabelSize = Math.round(17.5 * scale);
+            // 4. 文字資訊排版
+            let currentY = imgY + imgBoxSize + (10 * scale);
+            const rowGap = 7 * scale;
+            const fontLabelSize = Math.round(15 * scale);
 
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
 
-            // 怪獸宿主
+            // 宿主
             ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#ff7300";
             ctx.fillText("怪獸宿主：", imgX, currentY);
             let labelWidth = ctx.measureText("怪獸宿主：").width;
-            ctx.font = `bold ${Math.round(19 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.font = `bold ${Math.round(17 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#ffffff";
             ctx.fillText(currentUserName, imgX + labelWidth, currentY - (1 * scale));
 
-            currentY += Math.round(19 * scale) + rowGap;
+            currentY += Math.round(17 * scale) + rowGap;
 
-            // 內心怪獸
+            // 怪獸名稱
             ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#ff7300";
             ctx.fillText("內心怪獸：", imgX, currentY);
             labelWidth = ctx.measureText("內心怪獸：").width;
-            ctx.font = `bold ${Math.round(20 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
+            ctx.font = `bold ${Math.round(18 * scale)}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#ff9d00";
             ctx.fillText(finalMonsterResult.name, imgX + labelWidth, currentY - (1 * scale));
 
-            currentY += Math.round(20 * scale) + rowGap;
+            currentY += Math.round(18 * scale) + rowGap;
 
             // 嚇人指數
             ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#ff7300";
             ctx.fillText("嚇人指數：", imgX, currentY);
             labelWidth = ctx.measureText("嚇人指數：").width;
-            ctx.font = `bold ${Math.round(22 * scale)}px monospace`;
+            ctx.font = `bold ${Math.round(20 * scale)}px monospace`;
             ctx.fillStyle = "#ffff00";
             ctx.fillText(`${finalScareScore}`, imgX + labelWidth, currentY - (2 * scale));
 
-            currentY += Math.round(22 * scale) + rowGap;
+            currentY += Math.round(20 * scale) + rowGap;
 
-            // 怪獸簡介標題
+            // 怪獸簡介
             ctx.font = `bold ${fontLabelSize}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#ff7300";
             ctx.fillText("怪獸簡介：", imgX, currentY);
-            currentY += fontLabelSize + (6 * scale);
+            currentY += fontLabelSize + (4 * scale);
 
-            // 怪獸簡介內容（左側紫線條與斜體）
             const phrase = finalMonsterResult.phrase;
-            const phraseFontSize = Math.round(16 * scale);
+            const phraseFontSize = Math.round(14.5 * scale);
             ctx.font = `italic ${phraseFontSize}px 'Helvetica Neue', Arial, sans-serif`;
             ctx.fillStyle = "#f0e6d2";
 
@@ -997,10 +1021,9 @@
             }
             lines.push(line);
 
-            const lineHeight = phraseFontSize * 1.45;
+            const lineHeight = phraseFontSize * 1.4;
             const blockHeight = lines.length * lineHeight;
 
-            // 左側紫條
             ctx.strokeStyle = "#8a2be2";
             ctx.lineWidth = 3 * scale;
             ctx.beginPath();
@@ -1008,16 +1031,15 @@
             ctx.lineTo(imgX + (2 * scale), currentY + blockHeight);
             ctx.stroke();
 
-            // 繪製文字
             lines.forEach((l, idx) => {
-                ctx.fillText(l, imgX + (12 * scale), currentY + (idx * lineHeight));
+                ctx.fillText(l, imgX + (10 * scale), currentY + (idx * lineHeight));
             });
 
             // 5. 輸出邏輯判定
             const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
             const fileName = `${currentUserName}-內心怪獸-${finalMonsterResult.name}-嚇人指數${finalScareScore}.png`;
 
-            // 🖥️ 電腦端：使用 Blob 搭配虛擬連結直接靜默下載，絕不喚醒任何系統分享對話框
+            // 電腦端直接靜默下載
             if (!isMobile) {
                 exportCanvas.toBlob((blob) => {
                     if (!blob) return;
@@ -1036,7 +1058,7 @@
                 return;
             }
 
-            // 📱 手機端：喚起原生儲存影像面板以存入相簿
+            // 手機端呼叫原生儲存影像面板
             exportCanvas.toBlob(async (blob) => {
                 if (!blob) return;
                 const file = new File([blob], fileName, { type: "image/png" });
@@ -1053,7 +1075,6 @@
                     }
                 }
 
-                // 手機備援
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
